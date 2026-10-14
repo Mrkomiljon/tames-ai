@@ -1,0 +1,26 @@
+{
+  "variant": "abl_afmo_off",
+  "channels": [
+    0,
+    1
+  ],
+  "seed": 0,
+  "quality_on": true,
+  "train_auc_in_sample": 0.7028865600294172,
+  "val_auc": 0.59213542585082,
+  "test_auc": 0.72737686139748,
+  "best_val_auc_during_training": 0.59213542585082,
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 0.9718446969985962,
+      "val_auc": 0.42796684888026804
+    },
+    {
+      "epoch": 1,
+      "train_loss": 0.9441300868988037,
+      "val_auc": 0.59213542585082
+    }
+  ],
+  "d_tab": 13
+}

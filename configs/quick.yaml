@@ -1,0 +1,76 @@
+# Smoke-test configuration: tiny subset, low resolution, few epochs. Runs on CPU in minutes.
+# Results from this config are for checking the pipeline only.
+run_name: quick
+seed: 0
+fold: 0
+device: auto
+subset: 160             # images per split cap (train/val/test) — remove for the full run
+
+paths:
+  raw: data/raw/tn3k
+  labels: data/labels
+  processed: data/processed_quick
+  runs: runs
+
+image:
+  crop_margin: 1.5
+  size: 64
+  mask_source: gt
+
+fuzzy:
+  k: 7
+  alpha: 0.5
+  beta: 0.5
+  r0: 2
+  gamma: 1.0
+  r_min: 1
+  r_max: 3
+  lam: 0.5
+  grid:
+    alpha: [0, 1]
+    beta: [0, 1]
+    gamma: [1]
+    lam: [0, 0.5, 1.0]
+  tune_subset: 20
+
+cnn:
+  arch: resnet18
+  pretrained: false
+  d_h: 32
+  dropout: 0.3
+  lr: 0.001
+  weight_decay: 0.0001
+  batch_size: 32
+  epochs: 2
+  patience: 2
+  balance: true
+
+learners:
+  rf:
+    n_estimators: 100
+    max_features: [sqrt]
+    min_samples_leaf: [3]
+  xgb:
+    n_estimators: 100
+    early_stopping_rounds: 10
+    max_depth: [3]
+    learning_rate: [0.1]
+    subsample: [0.8]
+    colsample_bytree: [0.8]
+  fsvm:
+    C: [1]
+    gamma: [scale]
+
+ensemble:
+  tau_grid: [0.1, 1.0]
+  min_sensitivity: 0.95
+  pi_reg: null
+
+eval:
+  n_boot: 100
+  seeds: [0]
+
+explain:
+  shap_background: 20
+  shap_nsamples: 30
+  n_gradcam: 2

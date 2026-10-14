@@ -1,0 +1,25 @@
+{
+  "variant": "image_only",
+  "channels": [
+    0
+  ],
+  "seed": 0,
+  "quality_on": true,
+  "train_auc_in_sample": 0.6085677514248943,
+  "val_auc": 0.5515782049021337,
+  "test_auc": 0.5187367043037145,
+  "best_val_auc_during_training": 0.5515782049021337,
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 0.9730117082595825,
+      "val_auc": 0.4362546288132605
+    },
+    {
+      "epoch": 1,
+      "train_loss": 0.8766212582588195,
+      "val_auc": 0.5515782049021337
+    }
+  ],
+  "d_tab": 0
+}

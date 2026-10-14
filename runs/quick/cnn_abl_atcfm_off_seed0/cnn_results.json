@@ -1,0 +1,26 @@
+{
+  "variant": "abl_atcfm_off",
+  "channels": [
+    0,
+    3
+  ],
+  "seed": 0,
+  "quality_on": true,
+  "train_auc_in_sample": 0.6900165471594043,
+  "val_auc": 0.5947804619996473,
+  "test_auc": 0.7268859433807888,
+  "best_val_auc_during_training": 0.5947804619996473,
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 0.9690223217010498,
+      "val_auc": 0.4452477517192735
+    },
+    {
+      "epoch": 1,
+      "train_loss": 0.9341812252998352,
+      "val_auc": 0.5947804619996473
+    }
+  ],
+  "d_tab": 13
+}

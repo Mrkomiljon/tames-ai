@@ -1,0 +1,18 @@
+# environment and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# generated data (labels are versioned)
+data/*
+!data/labels/
+!data/labels/*.csv
+
+# run outputs: keep tables, json and figures, drop arrays, weights and logs
+runs/**/*
+!runs/**/*/
+!runs/**/*.csv
+!runs/**/*.json
+!runs/**/*.png

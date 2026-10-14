@@ -1,0 +1,28 @@
+{
+  "top10": [
+    "taller_than_wide",
+    "solidity",
+    "image embedding (\u03a3|\u03c6| over h_img)",
+    "eccentricity",
+    "irregularity",
+    "bright_frac",
+    "echo_std",
+    "area_frac",
+    "echo_mean",
+    "echo_ratio"
+  ],
+  "in_top10_frequency": {
+    "taller_than_wide": 1.0,
+    "solidity": 1.0,
+    "image embedding (\u03a3|\u03c6| over h_img)": 1.0,
+    "eccentricity": 1.0,
+    "irregularity": 1.0,
+    "bright_frac": 1.0,
+    "echo_std": 1.0,
+    "area_frac": 1.0,
+    "echo_mean": 0.969,
+    "echo_ratio": 0.735
+  },
+  "n_rows": 30,
+  "n_boot": 2000
+}

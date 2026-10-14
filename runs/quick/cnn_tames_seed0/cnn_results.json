@@ -1,0 +1,26 @@
+{
+  "variant": "tames",
+  "channels": [
+    0,
+    2
+  ],
+  "seed": 0,
+  "quality_on": true,
+  "train_auc_in_sample": 0.6865232579518293,
+  "val_auc": 0.6180567801093282,
+  "test_auc": 0.771395843560792,
+  "best_val_auc_during_training": 0.6180567801093282,
+  "history": [
+    {
+      "epoch": 0,
+      "train_loss": 0.9686266899108886,
+      "val_auc": 0.4149180038793864
+    },
+    {
+      "epoch": 1,
+      "train_loss": 0.9241860508918762,
+      "val_auc": 0.6180567801093282
+    }
+  ],
+  "d_tab": 13
+}

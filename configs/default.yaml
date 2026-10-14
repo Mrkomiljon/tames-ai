@@ -1,0 +1,74 @@
+# TAMES AI — default experiment on TN3K (official fold 0 train/val + official test).
+run_name: tn3k_fold0
+seed: 0
+fold: 0
+device: auto            # auto | cpu | cuda | mps
+
+paths:
+  raw: data/raw/tn3k
+  labels: data/labels
+  processed: data/processed
+  runs: runs
+
+image:
+  crop_margin: 1.5      # square nodule-centered crop, 1.5× the bbox side
+  size: 224             # H = W after resize
+  mask_source: gt       # gt = dataset masks (radiologist delineation) | afmo = Otsu-binarized F
+
+fuzzy:                  # Eqs. (1)–(8); α, β, γ, λ are re-selected on validation by 02_fuzzy_preprocess.py
+  k: 7
+  alpha: 0.5
+  beta: 0.5
+  r0: 2
+  gamma: 1.0
+  r_min: 1
+  r_max: 5
+  lam: 0.5
+  grid:
+    alpha: [0, 0.25, 0.5, 1, 2]
+    beta: [0, 0.25, 0.5, 1, 2]
+    gamma: [0.5, 1, 2]
+    lam: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  tune_subset: 150      # validation images used to tune α, β, γ, λ by Dice (speed)
+
+cnn:
+  arch: resnet18
+  pretrained: true
+  d_h: 128
+  dropout: 0.3
+  lr: 0.0003
+  weight_decay: 0.0001
+  batch_size: 32
+  epochs: 30
+  patience: 6
+  balance: true
+
+learners:
+  rf:
+    n_estimators: 500
+    max_features: [sqrt, 0.3]
+    min_samples_leaf: [1, 3, 5]
+  xgb:
+    n_estimators: 600
+    early_stopping_rounds: 30
+    max_depth: [3, 4, 6]
+    learning_rate: [0.03, 0.1]
+    subsample: [0.8]
+    colsample_bytree: [0.6, 0.8]
+  fsvm:
+    C: [0.3, 1, 3, 10]
+    gamma: [scale, 0.01, 0.1]
+
+ensemble:
+  tau_grid: [0.05, 0.1, 0.2, 0.5, 1.0]
+  min_sensitivity: 0.95
+  pi_reg: null          # regional prevalence; null → Δ_reg = 0 (same region as training)
+
+eval:
+  n_boot: 2000
+  seeds: [0, 1, 2, 3, 4]
+
+explain:
+  shap_background: 100
+  shap_nsamples: 200
+  n_gradcam: 8
