@@ -1,0 +1,4 @@
+model,mean_auc_drop
+cnn_image_only,0.019937486921950315
+late_fusion_cnn_xgb,0.018285916061339873
+tames,0.04035045436881588

@@ -1,8 +1,8 @@
 {
-  "deletion_auc_gradcam": 0.32065276398852804,
-  "insertion_auc_gradcam": 0.47486916120169553,
-  "deletion_auc_random": 0.40988458647434534,
-  "insertion_auc_random": 0.41111313251885806,
+  "deletion_auc_gradcam": 0.30538695355280654,
+  "insertion_auc_gradcam": 0.5095352583797649,
+  "deletion_auc_random": 0.31065502562851177,
+  "insertion_auc_random": 0.31611262213846203,
   "n_images": 32,
   "note": "lower deletion and higher insertion AUC than the random control = faithful"
 }

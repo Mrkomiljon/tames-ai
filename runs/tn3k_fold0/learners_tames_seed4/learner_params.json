@@ -4,20 +4,20 @@
   "quality_on": true,
   "params": {
     "rf": {
-      "max_features": 0.3,
+      "max_features": "sqrt",
       "min_samples_leaf": 1,
       "n_estimators": 500
     },
     "xgb": {
       "max_depth": 3,
-      "learning_rate": 0.1,
+      "learning_rate": 0.03,
       "subsample": 0.8,
       "colsample_bytree": 0.8,
-      "best_iteration": 24
+      "best_iteration": 32
     },
     "fsvm": {
-      "C": 10.0,
-      "gamma": 0.01
+      "C": 3.0,
+      "gamma": 0.1
     },
     "xgb_struct": {
       "max_depth": 4,

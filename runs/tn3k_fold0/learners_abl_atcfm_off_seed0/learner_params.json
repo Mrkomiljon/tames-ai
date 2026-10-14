@@ -9,14 +9,14 @@
       "n_estimators": 500
     },
     "xgb": {
-      "max_depth": 4,
-      "learning_rate": 0.03,
+      "max_depth": 6,
+      "learning_rate": 0.1,
       "subsample": 0.8,
       "colsample_bytree": 0.8,
-      "best_iteration": 91
+      "best_iteration": 16
     },
     "fsvm": {
-      "C": 10.0,
+      "C": 1.0,
       "gamma": 0.01
     },
     "xgb_struct": {

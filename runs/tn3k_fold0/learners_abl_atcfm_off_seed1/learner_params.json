@@ -5,15 +5,15 @@
   "params": {
     "rf": {
       "max_features": 0.3,
-      "min_samples_leaf": 1,
+      "min_samples_leaf": 3,
       "n_estimators": 500
     },
     "xgb": {
-      "max_depth": 3,
+      "max_depth": 4,
       "learning_rate": 0.03,
       "subsample": 0.8,
-      "colsample_bytree": 0.6,
-      "best_iteration": 110
+      "colsample_bytree": 0.8,
+      "best_iteration": 37
     },
     "fsvm": {
       "C": 10.0,

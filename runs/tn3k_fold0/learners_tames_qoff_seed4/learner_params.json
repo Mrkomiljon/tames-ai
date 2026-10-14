@@ -12,12 +12,12 @@
       "max_depth": 3,
       "learning_rate": 0.1,
       "subsample": 0.8,
-      "colsample_bytree": 0.6,
-      "best_iteration": 65
+      "colsample_bytree": 0.8,
+      "best_iteration": 34
     },
     "fsvm": {
       "C": 10.0,
-      "gamma": 0.01
+      "gamma": "scale"
     },
     "xgb_struct": {
       "max_depth": 3,

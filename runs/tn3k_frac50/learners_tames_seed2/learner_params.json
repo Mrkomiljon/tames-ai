@@ -10,14 +10,14 @@
     },
     "xgb": {
       "max_depth": 3,
-      "learning_rate": 0.03,
+      "learning_rate": 0.1,
       "subsample": 0.8,
-      "colsample_bytree": 0.8,
-      "best_iteration": 151
+      "colsample_bytree": 0.6,
+      "best_iteration": 13
     },
     "fsvm": {
-      "C": 10.0,
-      "gamma": 0.01
+      "C": 1.0,
+      "gamma": "scale"
     },
     "xgb_struct": {
       "max_depth": 3,

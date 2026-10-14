@@ -5,18 +5,18 @@
   "params": {
     "rf": {
       "max_features": 0.3,
-      "min_samples_leaf": 1,
+      "min_samples_leaf": 5,
       "n_estimators": 500
     },
     "xgb": {
-      "max_depth": 3,
+      "max_depth": 6,
       "learning_rate": 0.03,
       "subsample": 0.8,
-      "colsample_bytree": 0.6,
-      "best_iteration": 120
+      "colsample_bytree": 0.8,
+      "best_iteration": 42
     },
     "fsvm": {
-      "C": 10.0,
+      "C": 0.3,
       "gamma": "scale"
     },
     "xgb_struct": {

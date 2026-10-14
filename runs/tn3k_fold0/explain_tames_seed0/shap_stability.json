@@ -2,26 +2,26 @@
   "top10": [
     "image embedding (\u03a3|\u03c6| over h_img)",
     "solidity",
-    "taller_than_wide",
-    "eccentricity",
     "irregularity",
+    "eccentricity",
+    "taller_than_wide",
     "area_frac",
-    "n_components",
-    "echo_entropy",
+    "Q_img",
     "echo_std",
+    "bright_frac",
     "echo_mean"
   ],
   "in_top10_frequency": {
     "image embedding (\u03a3|\u03c6| over h_img)": 1.0,
     "solidity": 1.0,
-    "taller_than_wide": 1.0,
-    "eccentricity": 1.0,
     "irregularity": 1.0,
+    "eccentricity": 1.0,
+    "taller_than_wide": 1.0,
     "area_frac": 1.0,
-    "n_components": 0.9995,
-    "echo_entropy": 1.0,
+    "Q_img": 0.999,
     "echo_std": 0.9995,
-    "echo_mean": 0.7715
+    "bright_frac": 0.8895,
+    "echo_mean": 0.7995
   },
   "n_rows": 200,
   "n_boot": 2000

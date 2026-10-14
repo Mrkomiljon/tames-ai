@@ -4,7 +4,7 @@
   "quality_on": false,
   "params": {
     "rf": {
-      "max_features": 0.3,
+      "max_features": "sqrt",
       "min_samples_leaf": 5,
       "n_estimators": 500
     },
@@ -13,11 +13,11 @@
       "learning_rate": 0.03,
       "subsample": 0.8,
       "colsample_bytree": 0.6,
-      "best_iteration": 41
+      "best_iteration": 55
     },
     "fsvm": {
-      "C": 1.0,
-      "gamma": 0.01
+      "C": 10.0,
+      "gamma": "scale"
     },
     "xgb_struct": {
       "max_depth": 3,
