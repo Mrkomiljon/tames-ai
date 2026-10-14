@@ -111,6 +111,15 @@ config block (`fuzzy_params.json` records the choice).
   `ensemble.pi_reg: null` keeps it that way.
 - `device: auto` picks MPS on Apple Silicon. Step 02 uses `multiprocessing.Pool` with a
   module-level config dict, so new per-image parameters must be passed through `_CFG`.
+- Pass `--set` overrides literally, never through an unquoted shell variable: the default shell is
+  zsh, which does not word-split `$VAR`, so `--set $SET` becomes one argument and the
+  `paths.processed` / `run_name` overrides are silently ignored, writing into the main run's
+  directories. Also `setopt +o nomatch` before any `rm -f dir/*.npy` in a chained command, or a
+  non-matching glob aborts the chain.
+- Pretrained ImageNet weights cannot be downloaded by Python on this machine (SSL: self-signed
+  certificate in chain). torchvision then trains from scratch and prints a one-line warning; the
+  main run of 2026-10-13 trained from scratch. To enable pretraining, fetch the file with curl into
+  `~/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth` before training.
 - Tests only cover the fuzzy equations, FSVM membership and ensemble weights; there are no
   tests for the data loaders or the stage functions. Use `configs/quick.yaml` as the
   integration check.
