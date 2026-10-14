@@ -71,7 +71,10 @@ def _job(args):
 
 
 def run(cfg: dict, seeds, n_boot: int = 500, out_name: str = "robustness", workers: int = 4,
-        max_images: int | None = None, log=print) -> pd.DataFrame:
+        max_images: int | None = None, with_quality_off: bool = True, log=print) -> pd.DataFrame:
+    """`with_quality_off=True` also scores the ablation-(c) models (every Q_m = 1), when they
+    exist, as 'tames_quality_off' — this isolates whether the multiplicative quality gating of
+    Eq. (11) is what makes TAMES fragile under degradation."""
     from multiprocessing import Pool
     proc = Path(cfg["paths"]["processed"])
     splits = pd.read_csv(proc / "splits.csv")
@@ -98,6 +101,18 @@ def run(cfg: dict, seeds, n_boot: int = 500, out_name: str = "robustness", worke
                            tab["test"]["tab"].shape[1]).eval()
         cnn_i = load_model(cfg, 1, run_dir(cfg) / stage_name("cnn", "image_only", s) / "model.pt", device).eval()
         pieces.append((w, L, cnn_t, cnn_i))
+    qoff = []
+    qoff_dir = run_dir(cfg) / "ablation_quality_off"
+    if with_quality_off and (qoff_dir / "results.json").exists():
+        ens_q = json.load(open(qoff_dir / "results.json"))
+        t_star["tames_quality_off"] = ens_q["models"]["tames"]["threshold"]["t_star"]
+        for s in seeds:
+            w = {k: float(v) for k, v in ens_q["per_seed"][seeds.index(s)]["weights"].items()}
+            L = joblib.load(run_dir(cfg) / stage_name("learners", "tames", s, False) / "learners.joblib")
+            cnn_q = load_model(cfg, 2, run_dir(cfg) / stage_name("cnn", "tames", s, False) / "model.pt", device,
+                               tab["test"]["tab"].shape[1]).eval()
+            qoff.append((w, L, cnn_q))
+        log("[robustness] ablation-(c) quality-off models found: scoring them as tames_quality_off")
     masks = [load_mask(p) for p in test["mask_path"]]
     rows = []
     conditions = [("clean", 0.0)] + [(k, lv) for k, lvs in DEGRADATIONS.items() for lv in lvs]
@@ -121,7 +136,20 @@ def run(cfg: dict, seeds, n_boot: int = 500, out_name: str = "robustness", worke
             pi, _ = predict(cnn_i, X1, device)
             p_i.append(pi)
             p_lf.append(0.5 * (pi + L["xgb_struct"].predict_proba(z[:, L["d_h"]:])[:, 1]))
-        for name, P in (("tames", p_t), ("cnn_image_only", p_i), ("late_fusion_cnn_xgb", p_lf)):
+        p_q = []
+        if qoff:
+            ones = np.ones_like(Q)
+            tab_q = np.concatenate([s_tilde, ones[:, None], ones[:, None]], axis=1)   # Q_m = 1
+            for w, L, cnn_q in qoff:
+                p_dl, h = predict(cnn_q, X2, device, tab_q)
+                z = fuse(h, s_tilde, Q, q_struct, quality_on=False)
+                probs = {"dl": p_dl, "rf": L["rf"].predict_proba(z)[:, 1], "xgb": L["xgb"].predict_proba(z)[:, 1],
+                         "fsvm": L["fsvm"].predict_proba(z)}
+                p_q.append(final_probability(ensemble_probability(probs, w), 0.0))
+        models_out = [("tames", p_t), ("cnn_image_only", p_i), ("late_fusion_cnn_xgb", p_lf)]
+        if p_q:
+            models_out.append(("tames_quality_off", p_q))
+        for name, P in models_out:
             p = np.mean(P, axis=0)
             met = classification_metrics(y, p, t_star[name])
             ci = bootstrap_ci(y, p, t_star[name], n_boot=n_boot, keys=("auc",))
@@ -130,7 +158,7 @@ def run(cfg: dict, seeds, n_boot: int = 500, out_name: str = "robustness", worke
                          "sensitivity": met["sensitivity"], "specificity": met["specificity"],
                          "mean_q": float(Q.mean())})
         log(f"{kind:15s} {level:5.2f}  q̄={Q.mean():.3f}  " + "  ".join(
-            f"{r['model']} AUC {r['auc']:.3f}" for r in rows[-3:]))
+            f"{r['model']} AUC {r['auc']:.3f}" for r in rows[-len(models_out):]))
     df = pd.DataFrame(rows)
     out = run_dir(cfg) / out_name
     out.mkdir(exist_ok=True)
@@ -147,7 +175,7 @@ def run(cfg: dict, seeds, n_boot: int = 500, out_name: str = "robustness", worke
         kinds = list(DEGRADATIONS)
         fig, axes = plt.subplots(1, len(kinds), figsize=(4 * len(kinds), 3.4), sharey=True)
         for ax, kind in zip(axes, kinds):
-            for name in ("tames", "cnn_image_only", "late_fusion_cnn_xgb"):
+            for name in df.model.unique():
                 d = df[(df.model == name) & (df.degradation.isin(["clean", kind]))].sort_values("level")
                 ax.plot(range(len(d)), d["auc"], marker="o", label=name)
                 ax.fill_between(range(len(d)), d["auc_ci_low"], d["auc_ci_high"], alpha=0.15)

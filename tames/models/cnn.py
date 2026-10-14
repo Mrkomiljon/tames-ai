@@ -43,9 +43,13 @@ class NoduleCNN(nn.Module):
         weights = "IMAGENET1K_V1" if pretrained else None
         try:
             net = getattr(torchvision.models, arch)(weights=weights)
-        except Exception as e:  # no network for weights → train from scratch
-            print(f"[cnn] pretrained weights unavailable ({e.__class__.__name__}); training from scratch")
-            net = getattr(torchvision.models, arch)(weights=None)
+        except Exception as e:
+            # Never fall back silently: a run that claims ImageNet initialization must have it.
+            raise RuntimeError(
+                f"ImageNet weights for {arch} could not be loaded ({e.__class__.__name__}: {e}). "
+                "Either place the checkpoint in ~/.cache/torch/hub/checkpoints/ (e.g. "
+                "resnet18-f37072fd.pth from https://download.pytorch.org/models/) or set "
+                "cnn.pretrained=false explicitly and report 'trained from scratch'.") from e
         w = net.conv1.weight.data  # (64, 3, 7, 7)
         net.conv1 = nn.Conv2d(in_ch, 64, kernel_size=7, stride=2, padding=3, bias=False)
         with torch.no_grad():
