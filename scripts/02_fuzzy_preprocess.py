@@ -132,8 +132,19 @@ def main():
         print(f"selected α={sel['alpha']} β={sel['beta']} γ={sel['gamma']} λ={sel['lam']} polarity={polarity}"
               f"  val Dice {sel['val_dice']:.3f} (raw Otsu {sel['val_dice_raw_otsu'][polarity]:.3f})")
     else:
+        # --no-tune: reuse a previously selected (α, β, γ, λ, polarity) if <processed>/fuzzy_params.json
+        # exists (e.g. copied from the main run); otherwise fall back to the config block.
+        prev = proc / "fuzzy_params.json"
+        if prev.exists():
+            sel = json.load(open(prev))
+            fz.update({k: sel[k] for k in ("alpha", "beta", "gamma", "lam") if k in sel})
+            polarity = sel.get("polarity", polarity)
+            print(f"--no-tune: reusing α={fz['alpha']} β={fz['beta']} γ={fz['gamma']} λ={fz['lam']} polarity={polarity} from {prev}")
+        else:
+            print(f"--no-tune: no {prev}; using the config block α={fz['alpha']} β={fz['beta']} γ={fz['gamma']} λ={fz['lam']} polarity={polarity}")
         json.dump({**{k: fz[k] for k in ("alpha", "beta", "gamma", "lam", "k", "r0", "r_min", "r_max")},
-                   "polarity": polarity, "snr0": cfg["_snr0"], "tuned": False},
+                   "polarity": polarity, "snr0": cfg["_snr0"], "tuned": False,
+                   "reused_from": str(prev) if prev.exists() else None},
                   open(proc / "fuzzy_params.json", "w"), indent=2)
     im = cfg["image"]
     for split in ("train", "val", "test"):
