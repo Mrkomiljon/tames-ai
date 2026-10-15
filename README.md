@@ -4,9 +4,12 @@ Code for the revised manuscript *TAMES AI: An Adaptive Fuzzy, Multimodal Ensembl
 Malignancy Risk Assessment of Thyroid Nodules*. Every equation of Section 3 maps to one
 function (table below). PyTorch for the image branch; scikit-learn / XGBoost for the rest.
 
-**Status.** The pipeline runs end to end and was smoke-tested on a 160-image subset at
-64 px (`configs/quick.yaml`). The full experiment (`configs/default.yaml`) has **not** been
-run yet; its numbers must come from your own run before they go into the paper.
+**Status.** The full experiment (`configs/default.yaml`, ImageNet-initialized backbone, seeds 0–4)
+was run on 2026-10-14; its outputs are under `runs/tn3k_fold0/` (expert delineation),
+`runs/tn3k_automask/` (fully automatic), `runs/tn3k_frac*/` (low data) and
+`runs/tn3k_fold0/robustness/`. The manuscript, supplementary material and figures built from
+those outputs are in `paper/`. An earlier run with a randomly initialized backbone is kept
+under `runs/scratch_*/` for reference only; nothing in the paper uses it.
 
 ## What the experiment is
 
@@ -30,7 +33,7 @@ run yet; its numbers must come from your own run before they go into the paper.
 cd tames
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-brew install unrar            # macOS (apt install unrar on Debian/Ubuntu)
+brew install unar libomp       # macOS (apt install unrar on Debian/Ubuntu); libomp is needed by XGBoost
 bash scripts/00_download_tn3k.sh
 python -m pytest tests -q     # 11 range/reduction checks of the fuzzy equations
 ```
@@ -57,6 +60,36 @@ Or step by step (`--set key=value` overrides any config entry):
 | 7 | `07_explain.py` | `explain_tames_seed0/` SHAP summary + stability, Grad-CAM panel, faithfulness |
 | 9–10 | `09_lowdata.sh`, `10_lowdata_table.py` | low-data experiment: TAMES vs image-only CNN retrained on 10/25/50 % of the training partition (`train_frac`), `runs/lowdata_table.csv`, `lowdata.png` |
 | 8 | `08_robustness.py` (optional, after 3–5) | `robustness/` AUC of TAMES vs image-only CNN and late fusion under noise, speckle, blur and contrast loss applied to the raw test images (front end recomputed, models frozen); `robustness.png` |
+
+## Results (official TN3K test set, 614 images, predictions pooled over 5 seeds)
+
+![Architecture](paper/figures/fig2_architecture.png)
+
+| Model | Expert delineation, AUC [95 % CI] | Automatic delineation, AUC [95 % CI] |
+|---|---|---|
+| TAMES AI | 0.815 [0.779, 0.848] | 0.823 [0.787, 0.855] |
+| Image-only CNN | 0.830 [0.794, 0.861] | 0.805 [0.770, 0.839] |
+| CNN + XGBoost late fusion | 0.802 [0.767, 0.837] | 0.785 [0.747, 0.820] |
+| Descriptor-only XGBoost | 0.684 [0.644, 0.728] | 0.588 [0.539, 0.631] |
+
+With the radiologist delineation available, TAMES AI does not outperform the image-only CNN
+(ΔAUC −0.015, DeLong p = 0.10). With the crop and the descriptors derived automatically from the
+fuzzy map, it is ahead of the image-only CNN (ΔAUC +0.017, p = 0.09, Holm p = 0.36) and of the
+late fusion (ΔAUC +0.038, p = 0.002, Holm p = 0.01). The ensemble gives the best-calibrated
+probabilities (slope 1.07, intercept 0.16). Under image degradation TAMES AI loses more AUC than
+the baselines (mean drop 0.091 vs 0.034 for the image-only CNN), and at 10–50 % of the training
+images it is level with the image-only CNN. Full tables: `runs/tn3k_fold0/ensemble_tames_seed0/results_table.csv`,
+`ablation_table.csv`, `robustness/robustness.csv`, `runs/lowdata_table.csv`.
+
+| ROC curves (a: expert, b: automatic) | Robustness to image degradation |
+|---|---|
+| ![ROC](paper/figures/fig4_roc.png) | ![Robustness](paper/figures/fig5_robustness.png) |
+
+![SHAP and Grad-CAM](paper/figures/fig8_explanations.png)
+
+All figures are produced from saved outputs by `scripts/plots/` (see `paper/figures/README.md`):
+image flow, architecture, dataset samples through the fuzzy front end, ROC, robustness, low-data,
+calibration, explanations, and a supplementary per-seed figure.
 
 ## Equation → code map
 
@@ -116,15 +149,18 @@ Or step by step (`--set key=value` overrides any config entry):
 * Table 3 → `runs/tn3k_fold0/ensemble_tames_seed0/results_table.csv`; DeLong/McNemar/Holm in `results.json → comparisons_vs_tames`.
 * Table 4 → `runs/tn3k_fold0/ablation_table.csv`.
 * Supplementary S2 (hyperparameters) → `fuzzy_params.json`, `learner_params.json`, `cnn_results.json`.
-* Figure 5 → `explain_tames_seed0/shap_summary.png`, `gradcam.png`; stability and faithfulness JSONs.
+* Figures 1–8 and S1 → `python scripts/plots/fig*.py` (outputs in `paper/figures/`, inputs listed in `paper/figures/README.md`).
+* Word/PDF submission files → `python paper/word/build_word.py` (needs pandoc and python-docx).
 
 ## Layout
 
 ```
 tames/            package: fuzzy/ (Eqs 1–8), features/ (9–11 inputs), models/ (9, 12–16), eval/, pipeline.py
-scripts/          00 download · 01 prepare · 02 fuzzy · 03 cnn · 04 learners · 05 ensemble · 06 ablation · 07 explain
+scripts/          00 download · 01 prepare · 02 fuzzy · 03 cnn · 04 learners · 05 ensemble · 06 ablation · 07 explain · 08 robustness · 09–10 low data
+scripts/plots/    figure scripts (one per figure) + shared style modules
 configs/          default.yaml (full), quick.yaml (smoke test)
 data/labels/      TN3K labels (see 6 above);  data/raw/ and data/processed*/ are generated
 tests/            pytest range/reduction checks
-runs/             outputs
+runs/             outputs (tables, JSON and figures are versioned; arrays, weights and logs are not)
+paper/            manuscript_v3.md, supplementary.md, cover letter, figures/, word/ (build script and submission files)
 ```
