@@ -59,6 +59,7 @@ Or step by step (`--set key=value` overrides any config entry):
 | 6 | `06_ablation.py` | `ablation_table.csv` (Table 4) |
 | 7 | `07_explain.py` | `explain_tames_seed0/` SHAP summary + stability, Grad-CAM panel, faithfulness |
 | 9–10 | `09_lowdata.sh`, `10_lowdata_table.py` | low-data experiment: TAMES vs image-only CNN retrained on 10/25/50 % of the training partition (`train_frac`), `runs/lowdata_table.csv`, `lowdata.png` |
+| 11 | `11_predict.py --image img.jpg [--mask mask.png] [--cam out.png]` | inference on one image with the trained models: per-learner and ensemble probabilities per seed, seed-averaged p_final and label at t*, optional Grad-CAM overlay; without `--mask` the automatic-delineation models are used |
 | 8 | `08_robustness.py` (optional, after 3–5) | `robustness/` AUC of TAMES vs image-only CNN and late fusion under noise, speckle, blur and contrast loss applied to the raw test images (front end recomputed, models frozen); `robustness.png` |
 
 ## Results (official TN3K test set, 614 images, predictions pooled over 5 seeds)
