@@ -36,7 +36,7 @@ box(L + 1, y + 5, 20, 5, "ATCFM  μ(p)", fc="white"); box(L + 23, y + 5, 20, 5, 
 ax.text(L + 22, y + 1.6, "Eqs. (1)–(4): x̃, c, σ, T, K, q, μ", ha="center", va="center", fontsize=S, color=INK2)
 ax.text(L + 22, y - 1.6, "Eqs. (5)–(8): r(p), w(p), ε_w, δ_w, O, C, F", ha="center", va="center", fontsize=S - 0.3, color=INK2)
 label(y + 5, "2  Adaptive fuzzy layer", "#0072B2", True); label(y + 1.3, "(this work)", "#0072B2")
-box(L + 47, y + 0.5, 44, 9, "Preparation + quality", "imputation, z-scoring, $Q_{img}$, $Q_{struct}$ — Eq. (10)")
+box(L + 47, y + 0.5, 44, 9, "Preparation + quality", "imputation, z-scoring, $Q_{img}$, $Q_{struct}$ (Eq. 10)")
 box(L + 94, y + 0.5, 52, 9, "Preparation + quality", "$Q_{lab}$, $Q_{clin}$, $Q_{reg}$ — Eq. (10)"); label(y - 6, "3  Data preparation")
 y = H - 44; rows[3] = y
 box(L, y, 48, 9, "Backbone $f_\\theta$: $[\\tilde{x}, F]$ " + r"$\rightarrow h_{img} \in \mathbb{R}^{128}$", "ResNet-18, two input channels — Eq. (9)")
