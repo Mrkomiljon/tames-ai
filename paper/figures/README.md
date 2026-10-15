@@ -26,12 +26,16 @@ Notes.
 * Figure 3 rows: three benign (two true negatives, one false positive) above three malignant (two true positives,
   one false negative) at t*, drawn with `numpy.random.default_rng(0)`; every panel is a square (the whole image is
   padded with black); μ and F are shown with a per-map 1–99th-percentile display stretch (magma; state "display
-  range 1–99th percentile" in the caption); column (v) draws Otsu(F) as a solid blue contour and the radiologist
-  delineation as a dashed vermilion contour; the Dice printed is the per-image whole-image Dice from `meta_test.csv`.
+  range 1–99th percentile" in the caption); column (v) draws the largest connected component of Otsu(F) that overlaps the
+  delineation (if none overlaps, the largest component inside the crop) as a solid blue contour and the radiologist
+  delineation as a dashed vermilion contour (contour: largest component overlapping the delineation; Dice: whole
+  image, from `meta_test.csv`); column (i) pads the image to square with white and frames the actual image extent.
 * Figure 8a: x-axis scaled to the descriptors (0 to 1.1 × the largest descriptor value); the image-embedding bar
   is hatched, clipped at the axis edge and labelled with its value (0.278, 84.9 % of the total); the other bars are
   split into ω_k·mean|φ_k| per learner, rescaled so the parts sum to the ensemble mean |SHAP| of that feature; the
   percentage is the share of 2,000 bootstrap resamples in which the feature stayed in the top ten (top-10 only).
-* Figure 8b: rows TP, TN, FP, FN with two cases each, drawn with `default_rng(0)`; image | Grad-CAM overlay with
-  overlay opacity proportional to saliency (empty maps stay grey); saliency from the seed-0 backbone.
+* Figure 8b: rows TP, TN, FP, FN, one case each (the first of the `default_rng(0)` pairs); tiles image | Grad-CAM
+  normalized to the global maximum over the 32 images audited by step 7 | Grad-CAM normalized to its own maximum
+  (caption note: "left overlay: global scale; right overlay: per-map scale"); overlay opacity proportional to
+  saliency, so weak maps stay grey on the global scale; raw maps from the seed-0 backbone.
 * Figures 4, 5, 6 and S1 use the 95 % bootstrap CIs stored by the pipeline; nothing is re-estimated.

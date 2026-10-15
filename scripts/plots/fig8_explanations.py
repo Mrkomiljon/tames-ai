@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """Figure 8 — (a) mean |SHAP| of the ensemble for the top-12 features, x-axis scaled to the descriptors; the image-embedding
 bar is hatched and clipped at the axis edge with its value printed; bars are split into the per-learner parts ω_k·mean|φ_k|
-rescaled to the ensemble value; top-10 stability printed right of each bar. (b) Grad-CAM gallery, rows TP / TN / FP / FN,
-two cases per row, image | overlay (overlay alpha proportional to saliency), from the saved seed-0 backbone and the GradCAM
-class of scripts/07_explain.py (inference only).    python scripts/plots/fig8_explanations.py"""
+rescaled to the ensemble value; top-10 stability printed right of each bar. (b) Grad-CAM gallery, one case per outcome (TP / TN / FP / FN):
+image | overlay on the global scale (maximum over the 32 images audited by step 7) | overlay on its own scale, overlay
+opacity proportional to saliency; raw maps from the saved seed-0 backbone via the GradCAM class of scripts/07_explain.py
+(inference only).    python scripts/plots/fig8_explanations.py"""
 import sys, json; sys.path.insert(0, "scripts/plots"); sys.path.insert(0, "scripts"); sys.path.insert(0, ".")
 import numpy as np, pandas as pd, torch, matplotlib.pyplot as plt
 from matplotlib import cm as mcm
@@ -47,29 +48,42 @@ a.set_xlabel("mean |SHAP| (probability units), ensemble attribution"); a.tick_pa
 a.legend(loc="lower right", fontsize=5.8, title="learner share $\\omega_k \\cdot |\\phi_k|$", title_fontsize=5.8, bbox_to_anchor=(1.0, 0.0))
 a.text(0.0, -0.1, "% = share of 2,000 resamples in the top ten", transform=a.transAxes, ha="left", fontsize=5.8, color=INK2)
 fig.text(0.015, 0.965, "(a)", fontsize=9, fontweight="bold", color=INK, va="bottom")
-# (b) Grad-CAM gallery
+# (b) Grad-CAM gallery: one case per outcome; overlays on the global scale (max over the 32 audited images) and per map
 cfg = load_config("configs/default.yaml"); data = load_processed(cfg); tab = tabular_block(data); dev = get_device("cpu")
 chans = VARIANTS["tames"]; X = np.asarray(data["X"]["test"][:, chans], dtype=np.float32); y = data["y"]["test"]
 model = load_model(cfg, len(chans), "runs/tn3k_fold0/cnn_tames_seed0/model.pt", dev, tab["test"]["tab"].shape[1]).eval()
-GradCAM = import_module("07_explain").GradCAM; cam = GradCAM(model)
+GradCAM = import_module("07_explain").GradCAM
+
+class RawGradCAM(GradCAM):
+    """Same map as step 7 (ReLU of the gradient-weighted activations, upsampled) without the per-image min/max step."""
+    def __call__(self, x, tab_):
+        self.model.zero_grad(); logit = self.model(x, tab_); logit.sum().backward()
+        w_ = self.G.mean(dim=(2, 3), keepdim=True); cam_ = torch.relu((w_ * self.A).sum(dim=1, keepdim=True))
+        cam_ = torch.nn.functional.interpolate(cam_, size=x.shape[-2:], mode="bilinear", align_corners=False).squeeze(1)
+        return torch.sigmoid(logit).detach(), cam_.detach()
+
+cam = RawGradCAM(model)
+raw = lambda i: cam(torch.from_numpy(X[i: i + 1]), torch.from_numpy(tab["test"]["tab"][i: i + 1].astype(np.float32)))[1][0].numpy()
+audit = np.random.default_rng(0).permutation(len(X))[: max(int(cfg["explain"]["n_gradcam"]), 32)]  # the 32 images audited by step 7
+gmax = max(float(raw(i).max()) for i in audit)
 yhat = (P >= t).astype(int); rng = np.random.default_rng(0)
 pick = lambda cond: list(rng.choice(np.where(cond)[0], 2, replace=False))
-cases = [("TP", pick((y == 1) & (yhat == 1))), ("TN", pick((y == 0) & (yhat == 0))), ("FP", pick((y == 0) & (yhat == 1))), ("FN", pick((y == 1) & (yhat == 0)))]
-sub = gs[1].subgridspec(4, 5, width_ratios=[1, 1, 1, 1, 0.07], wspace=0.04, hspace=0.3)
-first = None; cmap = plt.get_cmap("magma")
-for r, (kind_, idx) in enumerate(cases):
-    for c, i in enumerate(idx):
-        x = torch.from_numpy(X[i: i + 1]); tt = torch.from_numpy(tab["test"]["tab"][i: i + 1].astype(np.float32))
-        p_dl, heat = cam(x, tt); heat = heat[0].numpy()
-        ax1 = fig.add_subplot(sub[r, 2 * c]); ax2 = fig.add_subplot(sub[r, 2 * c + 1])
-        if first is None: first = ax1
-        ax1.imshow(X[i, 0], cmap="gray", vmin=0, vmax=1); ax2.imshow(X[i, 0], cmap="gray", vmin=0, vmax=1)
-        rgba = cmap(heat); rgba[..., 3] = 0.9 * heat; last = ax2.imshow(rgba, vmin=0, vmax=1)
-        for ax in (ax1, ax2): ax.set_xticks([]); ax.set_yticks([]); ax.grid(False); [sp_.set_visible(False) for sp_ in ax.spines.values()]
-        ax1.text(1.02, -0.04, f"y = {int(y[i])}, p = {P[i]:.2f}", transform=ax1.transAxes, ha="center", va="top", fontsize=6, color=INK)
-        if c == 0: ax1.set_ylabel(kind_, fontsize=7, fontweight="bold", color=INK, rotation=0, ha="right", va="center", labelpad=6)
-        if r == 0: ax1.set_title("image", fontsize=6, color=INK2, pad=2); ax2.set_title("Grad-CAM", fontsize=6, color=INK2, pad=2)
-cax = fig.add_subplot(sub[:, 4]); pos = cax.get_position(); cax.set_position([pos.x0 + 0.01, 0.25, pos.width, 0.5])
-cb = fig.colorbar(mcm.ScalarMappable(cmap="magma"), cax=cax); cb.set_label("Grad-CAM saliency (normalized); overlay opacity $\\propto$ saliency", fontsize=6); cb.ax.tick_params(labelsize=6); cb.outline.set_linewidth(0.4)
+cases = [("TP", pick((y == 1) & (yhat == 1))[0]), ("TN", pick((y == 0) & (yhat == 0))[0]), ("FP", pick((y == 0) & (yhat == 1))[0]), ("FN", pick((y == 1) & (yhat == 0))[0])]
+print("gallery:", [(k, i, int(y[i]), round(float(P[i]), 2)) for k, i in cases], "| global max", round(gmax, 4))
+sub = gs[1].subgridspec(4, 4, width_ratios=[1, 1, 1, 0.07], wspace=0.04, hspace=0.3)
+cmap = plt.get_cmap("magma")
+def overlay(ax, img, h):
+    ax.imshow(img, cmap="gray", vmin=0, vmax=1); rgba = cmap(h); rgba[..., 3] = 0.9 * h; ax.imshow(rgba, vmin=0, vmax=1)
+for r, (kind_, i) in enumerate(cases):
+    h = raw(i); hg = np.clip(h / gmax, 0, 1); hp = h / (h.max() + 1e-8)
+    axs = [fig.add_subplot(sub[r, c]) for c in range(3)]
+    axs[0].imshow(X[i, 0], cmap="gray", vmin=0, vmax=1); overlay(axs[1], X[i, 0], hg); overlay(axs[2], X[i, 0], hp)
+    for ax in axs: ax.set_xticks([]); ax.set_yticks([]); ax.grid(False); [sp_.set_visible(False) for sp_ in ax.spines.values()]
+    axs[0].set_ylabel(kind_, fontsize=7, fontweight="bold", color=INK, rotation=0, ha="right", va="center", labelpad=6)
+    axs[1].text(0.5, -0.05, f"y = {int(y[i])}, p = {P[i]:.2f}", transform=axs[1].transAxes, ha="center", va="top", fontsize=6, color=INK)
+    if r == 0:
+        for ax, ttl in zip(axs, ("image", "global scale", "per-map scale")): ax.set_title(ttl, fontsize=6.5, color=INK2, pad=2)
+cax = fig.add_subplot(sub[:, 3]); pos = cax.get_position(); cax.set_position([pos.x0 + 0.01, 0.25, pos.width, 0.5])
+cb = fig.colorbar(mcm.ScalarMappable(cmap="magma"), cax=cax); cb.set_label("saliency (normalized); overlay opacity $\\propto$ saliency", fontsize=6); cb.ax.tick_params(labelsize=6); cb.outline.set_linewidth(0.4)
 fig.text(0.40, 0.965, "(b)", fontsize=9, fontweight="bold", color=INK, va="bottom")
 save(fig, "fig8_explanations")

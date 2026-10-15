@@ -2,14 +2,15 @@
 """Figure 3 — real TN3K test images through the fuzzy front end. Six rows (3 benign on top, 3 malignant below) chosen
 deterministically (seed 0) so that one false positive and one false negative at t* are included. Columns: (i) image padded
 to square with the radiologist contour and the 1.5× crop box, (ii) crop x̃, (iii) μ, (iv) F (both with a per-map 1–99th
-percentile display stretch, magma), (v) Otsu(F) as a solid contour and the delineation as a dashed contour over the
-greyscale crop, with the per-image Dice. Inputs: data/raw (images, masks), data/processed/{splits,meta_test}.csv,
+percentile display stretch, magma), (v) the largest Otsu(F) component overlapping the delineation as a solid contour and the
+delineation as a dashed contour over the greyscale crop, with the per-image whole-image Dice. Inputs: data/raw (images, masks), data/processed/{splits,meta_test}.csv,
 X_test.npy, fuzzy_params.json, saved predictions. Maps are recomputed from the raw image with the saved parameters.
     python scripts/plots/fig3_samples.py"""
 import sys, json; sys.path.insert(0, "scripts/plots"); sys.path.insert(0, ".")
 import numpy as np, pandas as pd, cv2, matplotlib.pyplot as plt
 from _style import setup, save, results, W2, MM, INK, INK2
 from tames.fuzzy import fuzzy_maps, otsu_binarize
+from skimage.measure import label as cc_label
 from tames.data import load_image, load_mask
 
 setup()
@@ -27,6 +28,19 @@ def square(a, fill=0):
     h, w = a.shape[:2]; s = max(h, w); out = np.full((s, s) + a.shape[2:], fill, dtype=a.dtype)
     oy, ox = (s - h) // 2, (s - w) // 2; out[oy:oy + h, ox:ox + w] = a; return out, oy, ox
 
+def nodule_component(seg, gt, box):
+    """Connected component(s) of the binarized map to draw: the largest component overlapping the delineation;
+    if none overlaps, the largest component inside the crop box."""
+    lab = cc_label(seg); best, size = 0, 0
+    for k in range(1, lab.max() + 1):
+        comp = lab == k; n = int((comp & gt).sum())
+        if n > size: best, size = k, n
+    if best == 0:
+        y0, y1, x0, x1 = box; sub = lab[y0:y1, x0:x1]
+        ids, counts = np.unique(sub[sub > 0], return_counts=True)
+        if len(ids): best = int(ids[np.argmax(counts)])
+    return lab == best if best else np.zeros_like(seg, dtype=bool)
+
 def stretch(m):
     lo, hi = np.percentile(m, [1, 99]); return np.clip((m - lo) / max(hi - lo, 1e-6), 0, 1)
 
@@ -39,14 +53,16 @@ for r, i in enumerate(rows):
     y0, y1, x0, x1 = map(int, m.crop.split(","))
     maps = fuzzy_maps(img, fz, fz["snr0"]); seg = otsu_binarize(maps["F"], fz["polarity"])
     x_t = np.asarray(X[i], dtype=np.float32)
-    sq, oy, ox = square(img)
+    sq, oy, ox = square(img, fill=255)
     ax = axes[r, 0]; ax.imshow(sq, cmap="gray", vmin=0, vmax=255)
+    ax.add_patch(plt.Rectangle((ox - 0.5, oy - 0.5), img.shape[1], img.shape[0], fill=False, ec="#9a9a9a", lw=0.5))
     msq, _, _ = square(mask.astype(np.uint8)); ax.contour(msq, levels=[0.5], colors=[C2], linewidths=0.6)
     ax.add_patch(plt.Rectangle((x0 + ox, y0 + oy), x1 - x0, y1 - y0, fill=False, ec=C1, lw=0.7, ls="--"))
     axes[r, 1].imshow(x_t[0], cmap="gray", vmin=0, vmax=1)
     im = axes[r, 2].imshow(stretch(x_t[1]), cmap="magma", vmin=0, vmax=1); axes[r, 3].imshow(stretch(x_t[2]), cmap="magma", vmin=0, vmax=1)
     ax = axes[r, 4]; ax.imshow(x_t[0], cmap="gray", vmin=0, vmax=1)
-    cs = cv2.resize(seg[y0:y1, x0:x1].astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST)
+    comp = nodule_component(seg, mask, (y0, y1, x0, x1))
+    cs = cv2.resize(comp[y0:y1, x0:x1].astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST)
     cm = cv2.resize(mask[y0:y1, x0:x1].astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST)
     ax.contour(cs, levels=[0.5], colors=[C1], linewidths=0.6); ax.contour(cm, levels=[0.5], colors=[C2], linewidths=0.6, linestyles="dashed")
     ax.text(0.04, 0.04, f"Dice {m.dice_afmo:.2f}", transform=ax.transAxes, fontsize=5.8, color=INK, va="bottom", bbox=dict(fc="white", ec="none", pad=1.2))
