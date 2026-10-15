@@ -80,7 +80,7 @@ This is a retrospective model development and evaluation study on a public datas
 | Patients, n | not provided by the dataset |
 | Official split | train 2,303 · validation 576 (fold 0) · test 614 |
 | Malignant, n (%) | train + validation 974 / 2,879 (33.8 %) · test 236 / 614 (38.4 %) |
-| Native image size, pixels | [[H range]] × [[W range]] |
+| Native image size, pixels | 174–826 × 184–1,463 |
 | Nodule delineation | binary mask per image, drawn by the dataset authors' radiologists |
 | Inclusion | every image of the official release |
 | Exclusion | none |
@@ -168,7 +168,7 @@ The structuring element B\_r(p) is a disc whose radius r(p) grows with local het
 r(p) = \operatorname{clip}\!\Big( \operatorname{round}\!\big[ r_0 \big(1 + \gamma\, \sigma(p)/\sigma_g \big) \big],\; r_{\min},\; r_{\max} \Big) \qquad (5)
 ```
 
-with r\_0 = [[2]], r\_min = 1, r\_max = [[5]] pixels and γ selected on the validation partition over {0.5, 1, 2}. A reliability weight limits the operator where the local variance is high:
+with r\_0 = 2, r\_min = 1, r\_max = 5 pixels and γ selected on the validation partition over {0.5, 1, 2}. A reliability weight limits the operator where the local variance is high:
 
 ```latex
 w(p) = 1 - \frac{\sigma(p)}{\max_{q} \sigma(q)} \in [0, 1] \qquad (6)
@@ -190,7 +190,7 @@ Opening suppresses bright speckle smaller than B\_r; closing fills dark gaps ins
 
 ### 3.6 Multimodal feature fusion
 
-The image embedding is produced by a convolutional backbone f\_θ ([[ResNet-18]] \[11\], ImageNet-initialized, first convolution widened to two input channels) applied to the normalized image and the AFMO map stacked as channels:
+The image embedding is produced by a convolutional backbone f\_θ (ResNet-18 \[11\], ImageNet-initialized, first convolution widened to two input channels) applied to the normalized image and the AFMO map stacked as channels:
 
 ```latex
 \mathbf{h}_{\text{img}} = f_\theta\big([\tilde{x},\, F]\big) \in \mathbb{R}^{d_h} \qquad (9)
@@ -288,15 +288,15 @@ The analysis plan below was fixed before the test partition was scored and is im
 
 **Three experiments test the framework where its assumptions matter.** E1, *fully automatic inference*: the crop and the descriptors are computed from the Otsu-binarized fuzzy map F instead of the radiologist mask, for TAMES AI and for every comparator, so that no expert input is used at inference; the preprocessing parameters selected in the main experiment are kept. E2, *image-quality robustness*: the raw test images are degraded with additive Gaussian noise (σ = 0.05, 0.10, 0.20 of the intensity range), multiplicative speckle noise (σ = 0.10, 0.20, 0.40), Gaussian blur (σ = 1, 2, 4 px) and contrast reduction (× 0.7, 0.5, 0.3 about the mean); the whole front end (fuzzy maps, q, crop, descriptors) is recomputed and the frozen models are scored, so that the quality coefficient reacts to the degradation; the ablation-(c) models are scored under the same conditions to isolate the effect of quality gating. E3, *low-data regime*: TAMES AI and the image-only CNN are retrained on 10 %, 25 % and 50 % of the training partition (stratified, three seeds), validation and test unchanged. Subgroup performance is reported by nodule size (area fraction below/above the median) only; TN3K has no Bethesda, sex or scanner metadata.
 
-**Sample size.** With the criteria of Riley et al. \[34\] for a binary outcome, d\_z = 141 candidate predictors, an anticipated AUC of [[ ]] and a prevalence of 0.338, the minimum development sample is [[n]] images with [[e]] events; the training partition (2,303 images, [[e\_train]] malignant) [[meets / does not meet]] it. The 614-image test set gives a 95 % CI half-width of about ±0.04 on an AUC of 0.75.
+**Sample size.** With the criteria of Riley et al. \[34\] for a binary outcome, d\_z = 141 candidate predictors, an anticipated AUC of 0.80 and a prevalence of 0.338, the minimum development sample is 4,519 images with 1,528 events; the training partition (2,303 images, 779 malignant) does not meet it. The 614-image test set gives a 95 % CI half-width of about ±0.04 on an AUC of 0.75.
 
 ### 3.13 Implementation
 
 | Item | Value |
 | --- | --- |
-| Framework | PyTorch [[x.y]] for f\_θ and g\_φ; scikit-learn [[x.y]] for RF and FSVM; xgboost [[x.y]]; shap [[x.y]]; scikit-image [[x.y]] for the fuzzy front end |
+| Framework | PyTorch 2.14.1 for f\_θ and g\_φ; scikit-learn 1.9.1 for RF and FSVM; xgboost 3.4.1; shap 0.53.0; scikit-image 0.26.0 for the fuzzy front end |
 | Backbone | ResNet-18, ImageNet-1k initialization, first convolution widened to two channels by averaging the pretrained filters |
-| Hardware | [[Apple M-series / GPU model, memory]]; training time [[min]] per seed |
+| Hardware | Apple M5 Pro (MPS backend), 24 GB unified memory; training time 2–5 min per seed (12–27 epochs at about 10 s per epoch) |
 | Seeds | five runs (seeds 0–4) for the main experiment and E1, three (0–2) for E3; pooled predictions for intervals, seed-to-seed SD in Supplementary Table S4 |
 | Image pipeline | nodule-centered crop of 1.5× the bounding box, resized to 224 × 224; window k = 7; L = 256; ε = 10⁻⁶; augmentation: horizontal flip, ±10° rotation, brightness ±10 % |
 | Optimization | AdamW, lr 3×10⁻⁴, weight decay 10⁻⁴, batch 32, cosine schedule, ≤ 30 epochs, early stopping on validation AUC (patience 6), class-balanced BCE |
@@ -305,7 +305,7 @@ The analysis plan below was fixed before the test partition was scored and is im
 
 ## 4. System Architecture
 
-TAMES AI is organized as eight layers (Figure 2). The data-collection layer admits four modalities; in this study only the image is available, and the structured branch is fed by descriptors derived from the nodule delineation (Table 2). The image passes through the adaptive fuzzy layer (Sections 3.4–3.5) and the convolutional backbone, the structured inputs through preparation and quality scoring; the fusion layer builds z (Eq. 11); the hybrid AI layer runs the four learners; the adaptive ensemble, regional prior and decision rule produce the final probability (Eqs. 14–16); the explainable-AI layer attaches SHAP and Grad-CAM evidence; and the decision-support layer returns label, probability and explanation. Inference takes [[x]] s per image on [[hardware]].
+TAMES AI is organized as eight layers (Figure 2). The data-collection layer admits four modalities; in this study only the image is available, and the structured branch is fed by descriptors derived from the nodule delineation (Table 2). The image passes through the adaptive fuzzy layer (Sections 3.4–3.5) and the convolutional backbone, the structured inputs through preparation and quality scoring; the fusion layer builds z (Eq. 11); the hybrid AI layer runs the four learners; the adaptive ensemble, regional prior and decision rule produce the final probability (Eqs. 14–16); the explainable-AI layer attaches SHAP and Grad-CAM evidence; and the decision-support layer returns label, probability and explanation. Inference takes 0.54 s per image on an Apple M5 Pro (mean over 100 test images at batch size 1: fuzzy front end 0.25 s on CPU, CNN on the MPS backend, learners on CPU).
 
 &#91;embedded content: TAMES AI architecture · 8 layers from four inputs to one explained probability\]
 
@@ -315,11 +315,11 @@ TAMES AI is organized as eight layers (Figure 2). The data-collection layer admi
 
 ### 5.1 Cohort
 
-All 3,493 images of the TN3K release were used: 2,303 training and 576 validation images (974 malignant, 33.8 %) and 614 test images (236 malignant, 38.4 %) (Table 1, Figure 1). No image was excluded; [[k]] delineations were empty after loading and received imputed descriptors with Q\_struct = 0. Native image sizes ranged from [[H×W min]] to [[H×W max]] pixels; the median training-image SNR that defines SNR₀ in Eq. (3) was [[ ]].
+All 3,493 images of the TN3K release were used: 2,303 training and 576 validation images (974 malignant, 33.8 %) and 614 test images (236 malignant, 38.4 %) (Table 1, Figure 1). No image was excluded; no delineation was empty after loading, so no descriptor was imputed and Q\_struct = 1 for every image. Native image sizes ranged from 174 × 216 to 771 × 1,463 pixels; the median training-image SNR that defines SNR₀ in Eq. (3) was 59.18.
 
 ### 5.2 Segmentation
 
-With the parameters selected on validation (α = 0.5, β = 0, γ = 1, λ = 0), the Otsu-binarized fuzzy map F reached a Dice coefficient of 0.201 against the dataset masks on the test set, compared with 0.120 for Otsu thresholding of the raw image (paired Wilcoxon p [[< 0.001]]); on validation the values were 0.232 and 0.145. The map is a boundary-and-homogeneity representation rather than a segmenter, and these values are whole-image thresholds without post-processing; their role is to show that the fuzzy processing moves the image toward the nodule, which Experiment E1 then tests as a source of the crop and the descriptors. Supplementary Figure S1 shows representative maps.
+With the parameters selected on validation (α = 0.5, β = 0, γ = 1, λ = 0), the Otsu-binarized fuzzy map F reached a Dice coefficient of 0.201 against the dataset masks on the test set, compared with 0.120 for Otsu thresholding of the raw image (paired Wilcoxon signed-rank test, n = 614, p = 1.1 × 10⁻⁴⁹); on validation the values were 0.232 and 0.145. The map is a boundary-and-homogeneity representation rather than a segmenter, and these values are whole-image thresholds without post-processing; their role is to show that the fuzzy processing moves the image toward the nodule, which Experiment E1 then tests as a source of the crop and the descriptors. Supplementary Figure S1 shows representative maps.
 
 ### 5.3 Classification with the expert delineation
 
@@ -336,7 +336,7 @@ With the parameters selected on validation (α = 0.5, β = 0, γ = 1, λ = 0), t
 | FSVM learner alone | 0.788 \[0.748, 0.826\] | 91.9 | 22.5 | 49.2 | 58.2 | 0.187 | 0.177 | 0.011 |
 | TAMES AI | 0.815 \[0.779, 0.848\] | 94.9 | 32.3 | 56.4 | 62.6 | 0.320 | 0.169 | 0.020 |
 
-TAMES AI did not outperform the image-only CNN (ΔAUC −0.015 \[−0.032, +0.003\], DeLong p = 0.10, Holm p = 0.50) or the late fusion (ΔAUC +0.012 \[−0.008, +0.033\], p = 0.24, Holm p = 0.73); McNemar tests on sensitivity and specificity at the fixed thresholds gave p = [[ ]] and [[ ]]. The descriptor-only model was clearly weaker (ΔAUC +0.131 for TAMES AI, p < 0.001), so the image carries most of the signal when an expert delineation is available; the late fusion's operating point traded sensitivity (92.4 %) for a higher specificity (50.8 %). Figure 3 shows the ROC curves. The learned ensemble weights, averaged over seeds, were ω\_DL = 0.16, ω\_RF = 0.05, ω\_XGB = 0.37, ω\_FSVM = 0.42 at τ = 0.05, i.e. the ensemble leaned on the two learners with the lowest validation log-loss.
+TAMES AI did not outperform the image-only CNN (ΔAUC −0.015 \[−0.032, +0.003\], DeLong p = 0.10, Holm p = 0.50) or the late fusion (ΔAUC +0.012 \[−0.008, +0.033\], p = 0.24, Holm p = 0.73); McNemar tests on sensitivity and specificity at the fixed thresholds (TAMES AI vs the image-only CNN) gave p = 0.688 and 0.899. The descriptor-only model was clearly weaker (ΔAUC +0.131 for TAMES AI, p < 0.001), so the image carries most of the signal when an expert delineation is available; the late fusion's operating point traded sensitivity (92.4 %) for a higher specificity (50.8 %). Figure 3 shows the ROC curves. The learned ensemble weights, averaged over seeds, were ω\_DL = 0.16, ω\_RF = 0.05, ω\_XGB = 0.37, ω\_FSVM = 0.42 at τ = 0.05, i.e. the ensemble leaned on the two learners with the lowest validation log-loss.
 
 ### 5.4 Ablation
 
@@ -401,11 +401,11 @@ At no fraction did TAMES AI differ from the image-only CNN (p = 0.42–0.97); wi
 
 ### 5.8 Calibration and threshold transfer
 
-On the test set the Brier score was 0.169 for TAMES AI, 0.167 for the image-only CNN and 0.176 for the late fusion; the calibration slope and intercept were 1.07 and 0.16 for TAMES AI, 0.85 and −0.43 for the image-only CNN and 0.98 and 0.08 for the late fusion (Figure 6), so the ensemble gave the best-calibrated probabilities while the single network was over-confident. Every model lost about 0.05 AUC between validation and test (0.869 → 0.815 for TAMES AI): the official test set has a higher malignant prevalence (38.4 % vs 33.8 %) and higher image SNR than the validation fold. The operating point fixed on validation for sensitivity ≥ 95 % delivered 94.9 % sensitivity and 32.3 % specificity on the test set; at the Youden threshold they were [[ ]] % and [[ ]] %. Where the prevalence of the deployment population differs further from the development data, Eq. (15) is the mechanism to move the operating point without retraining; it was not applied here because the test prevalence must not inform the model.
+On the test set the Brier score was 0.169 for TAMES AI, 0.167 for the image-only CNN and 0.176 for the late fusion; the calibration slope and intercept were 1.07 and 0.16 for TAMES AI, 0.85 and −0.43 for the image-only CNN and 0.98 and 0.08 for the late fusion (Figure 6), so the ensemble gave the best-calibrated probabilities while the single network was over-confident. Every model lost about 0.05 AUC between validation and test (0.869 → 0.815 for TAMES AI): the official test set has a higher malignant prevalence (38.4 % vs 33.8 %) and higher image SNR than the validation fold. The operating point fixed on validation for sensitivity ≥ 95 % delivered 94.9 % sensitivity and 32.3 % specificity on the test set; at the Youden threshold they were 56.4 % and 88.1 %. Where the prevalence of the deployment population differs further from the development data, Eq. (15) is the mechanism to move the operating point without retraining; it was not applied here because the test prevalence must not inform the model.
 
 ### 5.9 Explanations
 
-In the ensemble attribution over 200 test images the image embedding carried the largest share of |SHAP| ([[ ]] of the total), followed by solidity, irregularity, eccentricity, taller-than-wide ratio, area fraction, Q\_img, echo SD, bright-spot fraction and echo mean; nine of these ten stayed in the top ten in at least 95 % of 2,000 resamples (echo mean in 80 %) (Figure 7a). That Q\_img ranks seventh although its removal did not change the AUC (Table 4) is consistent with the robustness result: the learners do use q, which is why an out-of-range q harms them. Grad-CAM deletion AUC was 0.305 against 0.311 for the random-saliency control and insertion AUC 0.510 against 0.316, so the maps are faithful on insertion (the highlighted region is sufficient for the prediction) but not demonstrably on deletion (Figure 7b); maps concentrated on the nodule in high-probability cases. Subgroup AUCs by nodule size were [[ ]] (below median area) and [[ ]] (above).
+In the ensemble attribution over 200 test images the image embedding carried the largest share of |SHAP| (84.9 % of the total), followed by solidity, irregularity, eccentricity, taller-than-wide ratio, area fraction, Q\_img, echo SD, bright-spot fraction and echo mean; nine of these ten stayed in the top ten in at least 95 % of 2,000 resamples (echo mean in 80 %) (Figure 7a). That Q\_img ranks seventh although its removal did not change the AUC (Table 4) is consistent with the robustness result: the learners do use q, which is why an out-of-range q harms them. Grad-CAM deletion AUC was 0.305 against 0.311 for the random-saliency control and insertion AUC 0.510 against 0.316, so the maps are faithful on insertion (the highlighted region is sufficient for the prediction) but not demonstrably on deletion (Figure 7b); maps concentrated on the nodule in high-probability cases. Subgroup AUCs by nodule size were 0.747 (below median area, n = 307) and 0.841 (above, n = 307).
 
 ## 6. Discussion
 
