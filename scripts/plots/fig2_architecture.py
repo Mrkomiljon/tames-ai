@@ -1,154 +1,254 @@
 #!/usr/bin/env python
-"""Figure 2 — architecture of TAMES AI as eight layers (170 mm, double column).
+"""Figure 2 — computational architecture of TAMES AI (170 mm, double column).
 
-Solid boxes are evaluated on TN3K; dashed boxes are defined by the framework but not
-available in TN3K; the blue box is the contribution of this work. Equation numbers refer to
-Section 3 of the manuscript.
+(a) the full model as a data-flow graph with tensor shapes: image branch (fuzzy front end →
+    two-channel ResNet-18 → 128-d embedding), structured branch, quality-weighted fusion,
+    four learners, adaptive ensemble and decision rule;
+(b) the fuzzy front end, Eqs. (1)–(8);
+(c) the residual block of the backbone.
+Solid = evaluated on TN3K, dashed = defined by the framework but without data in TN3K,
+blue = contribution of this work. Equation numbers refer to Section 3.
     python scripts/plots/fig2_architecture.py [--out paper/figures]
 """
 import argparse
 import sys
 from pathlib import Path
 
-from matplotlib.patches import FancyBboxPatch
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from figstyle_diagram import (ACCENT, ACCENT_FILL, GREY, INK, RULE, TINT, arrow, box, canvas,  # noqa: E402
                               label, save, setup_font)
 
 ROOT = Path(__file__).resolve().parents[2]
-T, L = 7.0, 5.9  # title / line sizes
+CONV_FILL, CONV_EDGE = "#fdf1e7", "#d55e00"     # convolutional blocks (Okabe–Ito vermillion)
+FC_FILL, FC_EDGE = "#e8f4ee", "#009e73"         # dense layers (Okabe–Ito green)
+PANEL = "#f8f8f6"
+T, L, S = 6.1, 5.1, 4.6                          # title / line / shape-label sizes (pt)
+DASH = (0, (2.2, 1.6))
+
+
+def node(ax, x, y, text, r=2.1, size=7.0):
+    ax.add_patch(Circle((x, y), r, facecolor="white", edgecolor=INK, linewidth=0.8, zorder=3))
+    ax.text(x, y, text, ha="center", va="center", fontsize=size, color=INK, zorder=4)
+
+
+def stack(ax, x, y, w, h, n=2, fill=CONV_FILL, edge=CONV_EDGE, off=0.9):
+    """n offset rounded boxes = repeated blocks."""
+    for i in reversed(range(n)):
+        ax.add_patch(FancyBboxPatch((x + i * off, y - i * off), w, h, boxstyle="round,pad=0,rounding_size=0.8",
+                                    facecolor=fill, edgecolor=edge, linewidth=0.8, zorder=2 + (n - i) * 0.01))
+
+
+def shape(ax, x, y, text, size=S, color=GREY):
+    ax.text(x, y, text, ha="center", va="top", fontsize=size, color=color, zorder=3)
+
+
+def panel_title(ax, x, y, letter, text):
+    ax.text(x, y, letter, ha="left", va="center", fontsize=8, fontweight="bold", color=INK, zorder=3)
+    ax.text(x + 4.5, y, text, ha="left", va="center", fontsize=6.8, color=INK, zorder=3)
+
+
+def dashed_arrow(ax, p0, p1):
+    ax.plot([p0[0], p1[0]], [p0[1], p1[1]], color=RULE, lw=0.8, ls=DASH, zorder=1)
+    ax.add_patch(FancyArrowPatch((p1[0] - (p1[0] - p0[0]) * 1e-3, p1[1] - (p1[1] - p0[1]) * 1e-3), p1,
+                                 arrowstyle="-|>,head_length=3,head_width=1.75", color=RULE, linewidth=0.8,
+                                 mutation_scale=1, shrinkA=0, shrinkB=0, zorder=1))
 
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--out", default=str(ROOT / "paper" / "figures"))
     a = ap.parse_args()
     setup_font()
-    W, H = 170, 150
+    W, H = 170, 142
     fig, ax = canvas(W, H)
-    LX = 29.5                                    # right edge of the label column
-    A = (33, 45); B = (81, 41); C = (125, 43)    # (x, width) of the three input columns
-    cA, cB, cC = A[0] + A[1] / 2, B[0] + B[1] / 2, C[0] + C[1] / 2
-    right = C[0] + C[1]
-    dashed = dict(ls=(0, (2.2, 1.6)), edge=RULE, title_color=GREY)
 
-    # ---- R1 data collection
-    y1, h1 = 2, 11.5
-    box(ax, A[0], y1, A[1], h1, "Ultrasound image $I_n$", ["B-mode frame, 224 × 224 nodule-centred crop"],
+    # ------------------------------------------------------------------ (a) image branch, lane 1
+    panel_title(ax, 2, 2, "(a)", "TAMES AI as a data-flow graph; shapes are per image")
+    yc = 20                                                   # lane-1 centre line
+    box(ax, 2, yc - 8, 13, 16, "Input $I_n$", ["B-mode crop", "224 × 224 × 1"], fill=TINT,
         title_size=T, line_size=L)
-    box(ax, B[0], y1, B[1], h1, "Sonographic descriptors $d_n$", ["11 values from image + delineation",
-                                                           "computable TI-RADS counterparts"], title_size=T, line_size=L)
-    box(ax, C[0], y1, C[1], h1, "Clinical branch", ["laboratory $l_n$, clinical $c_n$, regional $r_n$",
-                                             "defined for deployment · not in TN3K"], title_size=T, line_size=L, **dashed)
-    label(ax, LX, y1 + h1 / 2, "Data collection")
+    box(ax, 17, yc - 11, 24, 22, "Fuzzy front end", ["ATCFM $\\mu(p)$ — Eq. (4)", "AFMO $F$ — Eq. (8)",
+                                                  "quality $q$ — Eq. (3)", "panel (b)"],
+        fill=ACCENT_FILL, edge=ACCENT, lw=1.1, title_color=ACCENT, title_size=T, line_size=L)
+    arrow(ax, (15, yc), (17, yc))
+    box(ax, 44, yc - 8, 11, 16, "$[\\tilde x, F]$", ["2 channels", "224 × 224 × 2"], title_size=T, line_size=L)
+    arrow(ax, (41, yc), (44, yc))
 
-    # ---- R2 adaptive fuzzy layer | preparation
-    y2, h2 = 20, 15
-    box(ax, A[0], y2, A[1], h2, "Adaptive fuzzy layer (this work)",
-        ["ATCFM membership $\\mu(p)$ — Eqs. (1)–(4)", "AFMO map $F=\\lambda O+(1-\\lambda)C$ — Eqs. (5)–(8)",
-         "image-quality coefficient $q$ — Eq. (3)"], fill=ACCENT_FILL, edge=ACCENT, lw=1.1,
-        title_size=T, line_size=L, title_color=ACCENT)
-    box(ax, B[0], y2, B[1], h2, "Preparation and quality", ["median imputation, z-scoring",
-                                                     "$Q_{struct}$ = observed fraction — Eq. (10)"], title_size=T, line_size=L)
-    box(ax, C[0], y2, C[1], h2, "Preparation and quality", ["$Q_{lab},\\,Q_{clin},\\,Q_{reg}$ — Eq. (10)",
-                                                     "not evaluated in this study"], title_size=T, line_size=L, **dashed)
-    label(ax, LX, y2 + h2 / 2, "Adaptive fuzzy layer\nData preparation")
+    # ResNet-18 container
+    rx0, rx1 = 58, 115
+    ax.add_patch(FancyBboxPatch((rx0, 6), rx1 - rx0, 30, boxstyle="round,pad=0,rounding_size=1.2",
+                                facecolor=PANEL, edgecolor=RULE, linewidth=0.7, zorder=1))
+    ax.text(rx0 + 2, 8.6, "ResNet-18 backbone $f_\\theta$ — Eq. (9)", ha="left", va="center", fontsize=T,
+            fontweight="bold", color=INK, zorder=3)
+    ax.text(rx0 + 2, 33.3, "ImageNet-1k initialization; stem widened to two channels", ha="left", va="center",
+            fontsize=S, color=GREY, zorder=3)
+    arrow(ax, (55, yc), (rx0 + 2.5, yc))
+    # stem
+    sx = rx0 + 2.5
+    ax.add_patch(FancyBboxPatch((sx, yc - 10), 7, 20, boxstyle="round,pad=0,rounding_size=0.8",
+                                facecolor=CONV_FILL, edgecolor=CONV_EDGE, linewidth=0.8, zorder=2))
+    ax.text(sx + 3.5, yc, "7×7 conv\n64, /2\nmaxpool /2", ha="center", va="center", fontsize=S, color=INK, zorder=3)
+    shape(ax, sx + 3.5, yc + 10.8, "56² × 64")
+    # four stages, heights follow the spatial size
+    stages = [("64", 56, 18), ("128", 28, 14.5), ("256", 14, 11), ("512", 7, 8)]
+    x = sx + 7 + 3
+    cx_last = None
+    for ch, sp, h in stages:
+        stack(ax, x, yc - h / 2, 7, h)
+        ax.text(x + 3.9, yc - 0.4, f"basic\nblock\n×2", ha="center", va="center", fontsize=S, color=INK, zorder=4)
+        shape(ax, x + 4, yc + h / 2 + 1.3, f"{sp}² × {ch}")
+        arrow(ax, (x - 3, yc), (x, yc))
+        cx_last = x + 4
+        x += 7 + 3.4
+    # GAP
+    ax.add_patch(FancyBboxPatch((x, yc - 4), 6, 8, boxstyle="round,pad=0,rounding_size=0.8",
+                                facecolor=FC_FILL, edgecolor=FC_EDGE, linewidth=0.8, zorder=2))
+    ax.text(x + 3, yc, "GAP", ha="center", va="center", fontsize=S, color=INK, zorder=3)
+    shape(ax, x + 3, yc + 5.3, "512")
+    arrow(ax, (x - 2.5, yc), (x, yc))
+    ax.text(cx_last, 29.6, "Grad-CAM tap", ha="center", va="center", fontsize=S, color=GREY,
+            fontstyle="italic", zorder=3)
 
-    # ---- R3 backbone | fusion
-    y3, h3 = 41, 12.5
-    box(ax, A[0], y3, A[1], h3, "Backbone $f_\\theta$ (ResNet-18)", ["two input channels $[\\tilde x, F]$",
-                                                              "128-d embedding $h_{img}$ — Eq. (9)"], title_size=T, line_size=L)
-    box(ax, B[0], y3, right - B[0], h3, "Quality-weighted fusion — Eq. (11)",
-        ["$z=[\\,Q_{img}h_{img};\\;Q_{struct}\\tilde d;\\;Q_{img},Q_{struct}\\,]$, 141-d on TN3K",
-         "general form appends $\\tilde l,\\tilde c,\\tilde r$ with $Q_{lab},Q_{clin},Q_{reg}$"], title_size=T, line_size=L)
-    label(ax, LX, y3 + h3 / 2, "Fusion")
+    # FC embedding
+    fx = rx1 + 3
+    box(ax, fx, yc - 7, 16, 14, "FC 512 $\\rightarrow$ 128", ["ReLU, dropout 0.3", "$h_{img} \\in \\mathbb{R}^{128}$"],
+        fill=FC_FILL, edge=FC_EDGE, title_size=T, line_size=L)
+    arrow(ax, (rx1, yc), (fx, yc))
+    # × Q_img
+    mx = fx + 16 + 6.5
+    node(ax, mx, yc, "×")
+    arrow(ax, (fx + 16, yc), (mx - 2.1, yc))
+    label(ax, mx + 2.8, yc - 3.2, "$Q_{img} = q$", ha="left", size=S)
+    # q path from the fuzzy front end along the top
+    ax.plot([29, 29, mx, mx], [yc - 11, 5.5, 5.5, yc - 2.1], color=ACCENT, lw=0.7, ls=DASH, zorder=1)
+    ax.add_patch(FancyArrowPatch((mx, yc - 2.6), (mx, yc - 2.1), arrowstyle="-|>,head_length=3,head_width=1.75",
+                                 color=ACCENT, linewidth=0.7, mutation_scale=1, shrinkA=0, shrinkB=0, zorder=1))
+    ax.text(84, 5.5, "$q$ — image-quality coefficient, Eq. (3), gates the embedding (Eqs. 10–11)",
+            ha="center", va="center", fontsize=S, color=ACCENT, zorder=3,
+            bbox=dict(facecolor="white", edgecolor="none", pad=0.6))
 
-    # ---- R4 learners
-    y4, h4 = 59.5, 11.5
-    lw4 = (right - A[0] - 3 * 3) / 4
-    lx = [A[0] + i * (lw4 + 3) for i in range(4)]
-    lc = [x + lw4 / 2 for x in lx]
-    box(ax, lx[0], y4, lw4, h4, "DL head $g_\\phi$", ["two-layer head on $z$", "141 $\\rightarrow$ 64 $\\rightarrow$ 1, sigmoid"], title_size=T, line_size=L)
-    box(ax, lx[1], y4, lw4, h4, "Random forest", ["500 trees", "out-of-bag calibration"], title_size=T, line_size=L)
-    box(ax, lx[2], y4, lw4, h4, "XGBoost", ["gradient-boosted trees", "logistic objective"], title_size=T, line_size=L)
-    box(ax, lx[3], y4, lw4, h4, "Fuzzy SVM", ["sample membership $s_n$", "Eqs. (12)–(13)"], title_size=T, line_size=L)
-    label(ax, LX, y4 + h4 / 2, "Hybrid learners")
-
-    # ---- R5 ensemble
-    y5, h5 = 77, 10.5
-    box(ax, A[0], y5, right - A[0], h5, "Adaptive ensemble — Eq. (14)",
-        ["$p_{ens}=\\mathrm{\\Sigma}_k\\,\\omega_k p_k$,   $\\omega_k\\propto\\exp(-L_k^{val}/\\tau)$   ·   $\\tau$ and $\\omega_k$ fixed on validation"],
+    # ------------------------------------------------------------------ structured branch, lane 2
+    y2 = 46
+    box(ax, 2, y2 - 6, 26, 12, "Descriptors $d_n$", ["11 values, image + delineation", "Table 2"],
         title_size=T, line_size=L)
+    box(ax, 31, y2 - 6, 36, 12, "Preparation", ["median imputation, z-scoring $\\rightarrow$ $\\tilde d$",
+                                              "$Q_{struct}$ = observed fraction — Eq. (10)"], title_size=T, line_size=L)
+    arrow(ax, (28, y2), (31, y2))
+    node(ax, 73, y2, "×")
+    arrow(ax, (67, y2), (70.9, y2))
+    label(ax, 73, y2 - 3.4, "$Q_{struct}$", ha="center", size=S)
+    # clinical branch (dashed, not in TN3K)
+    y2b = 60
+    box(ax, 2, y2b - 5.5, 65, 11, "Clinical branch (framework only)",
+        ["$\\tilde l_n, \\tilde c_n, \\tilde r_n$ with $Q_{lab}, Q_{clin}, Q_{reg}$ · no data in TN3K"],
+        ls=DASH, edge=RULE, title_color=GREY, title_size=T, line_size=L)
 
-    # ---- R6 prior | decision
-    y6, h6 = 93.5, 12.5
-    px, pw = A[0], 60
-    dx = px + pw + 3; dw = right - dx
-    box(ax, px, y6, pw, h6, "Regional prior — Eq. (15)",
-        ["$\\Delta_{reg}=\\mathrm{logit}\\,\\pi_{reg}-\\mathrm{logit}\\,\\pi_{train}$", "$\\Delta_{reg}=0$ on TN3K"],
-        title_size=T, line_size=L)
-    box(ax, dx, y6, dw, h6, "Decision rule — Eq. (16)",
-        ["$p_{final}=\\sigma(\\mathrm{logit}\\,p_{ens}+\\Delta_{reg})$,   $\\hat y=1[\\,p_{final}\\geq t^*]$",
-         "$t^*$: sensitivity ≥ 0.95 on validation"], title_size=T, line_size=L)
-    label(ax, LX, (y5 + y6 + h6) / 2, "Ensemble and decision")
+    # fusion box
+    fx0, fy0, fw, fh = 112, 40, 56, 27
+    box(ax, fx0, fy0, fw, fh, "Quality-weighted fusion — Eq. (11)",
+        ["$z = [\\,Q_{img}h_{img};\\;Q_{struct}\\tilde d;\\;Q_{img},Q_{struct}\\,]$",
+         "128 + 11 + 2 = 141 on TN3K", "general form appends the clinical branch"], fill=TINT, title_size=T, line_size=L)
+    arrow(ax, (mx, yc + 2.1), (mx, fy0))                                   # Q_img·h_img ↓
+    label(ax, mx + 1.5, (yc + fy0) / 2 + 1, "$Q_{img}h_{img} \\in \\mathbb{R}^{128}$", ha="left", size=S)
+    arrow(ax, (75.1, y2), (fx0, y2))                                       # Q_struct·d̃ →
+    label(ax, (75 + fx0) / 2, y2 - 2.2, "$Q_{struct}\\tilde d \\in \\mathbb{R}^{11}$", ha="center", size=S)
+    dashed_arrow(ax, (67, y2b), (fx0, y2b))
+    # z bus to lane 3
+    zx, ybus, y3c = fx0 + fw / 2, 72, 90
+    ax.plot([zx, zx, 21, 21], [fy0 + fh, ybus, ybus, y3c], color=INK, lw=1.0, zorder=1)
+    ax.text(zx + 1.5, (fy0 + fh + ybus) / 2, "$z \\in \\mathbb{R}^{141}$", ha="left", va="center", fontsize=L,
+            color=INK, zorder=3)
 
-    # ---- R7 explainable AI
-    y7, h7 = 112, 12.5
-    box(ax, px, y7, pw, h7, "SHAP attribution", ["TreeSHAP / KernelSHAP on $z$;  $\\phi^{ens}_j=\\mathrm{\\Sigma}_k\\,\\omega_k\\phi^k_j$",
-                                                 "top-10 rank stability over resamples"], title_size=T, line_size=L)
-    box(ax, dx, y7, dw, h7, "Grad-CAM", ["last residual block of $f_\\theta$",
-                                         "deletion / insertion faithfulness vs random saliency"], title_size=T, line_size=L)
-    label(ax, LX, y7 + h7 / 2, "Explainable AI")
-
-    # ---- R8 output
-    y8, h8 = 130.5, 9.5
-    box(ax, A[0], y8, right - A[0], h8, "Decision-support output",
-        ["label $\\hat y$  ·  probability $p_{final}$  ·  feature attribution  ·  saliency map"],
+    # ------------------------------------------------------------------ learners + decision, lane 3
+    lx, lw_, lh = 28, 29, 7
+    learners = [("DL head $g_\\phi$", "141 $\\rightarrow$ 64 $\\rightarrow$ 1, sigmoid"), ("Random forest", "500 trees, OOB-calibrated"),
+                ("XGBoost", "early-stopped on validation"), ("Fuzzy SVM", "RBF, membership $s_n$, Platt")]
+    ys = [y3c - 13.5, y3c - 4.5, y3c + 4.5, y3c + 13.5]
+    for (t, l_), y in zip(learners, ys):
+        box(ax, lx, y - lh / 2, lw_, lh, t, [l_], title_size=5.9, line_size=S, gap=1.2)
+        ax.plot([21, 21], [y3c, y], color=INK, lw=1.0, zorder=1)
+        arrow(ax, (21, y), (lx, y), color=INK)
+    sx_ = lx + lw_ + 10
+    node(ax, sx_, y3c, "Σ", r=2.6)
+    for y in ys:
+        ax.add_patch(FancyArrowPatch((lx + lw_, y), (sx_ - 2.3, y3c), arrowstyle="-|>,head_length=3,head_width=1.75",
+                                     color=RULE, linewidth=0.8, mutation_scale=1, shrinkA=0, shrinkB=0, zorder=1,
+                                     connectionstyle="arc3,rad=0"))
+    label(ax, sx_ + 3, y3c + 11.0, "$p_{ens} = \\Sigma_k\\,\\omega_k p_k$ — Eq. (14);  $\\omega_k \\propto \\exp(-L_k^{val}/\\tau)$, frozen on validation",
+          ha="left", size=S)
+    label(ax, lx + lw_ / 2, ys[0] - 5.6, "learners fitted on $z$ (training rows), tuned on validation", ha="center",
+          size=S, style="italic")
+    # SHAP tap on z
+    box(ax, 2, y3c + 9, 17, 9, "SHAP on $z$", ["TreeSHAP /", "KernelSHAP"],
+        ls=DASH, edge=RULE, title_color=GREY, title_size=5.4, line_size=4.5, gap=0.8)
+    ax.plot([19, 21], [y3c + 13.5, y3c + 13.5], color=RULE, lw=0.7, ls=DASH, zorder=1)
+    # decision chain
+    dx = sx_ + 6
+    box(ax, dx, y3c - 7, 30, 14, "Regional prior — Eq. (15)",
+        ["$\\mathrm{logit}\\,p_{ens} + \\Delta_{reg}$", "$\\Delta_{reg} = 0$ on TN3K"], title_size=T, line_size=L)
+    arrow(ax, (sx_ + 2.6, y3c), (dx, y3c))
+    node(ax, dx + 36, y3c, "σ")
+    arrow(ax, (dx + 30, y3c), (dx + 33.9, y3c))
+    label(ax, dx + 36, y3c - 3.4, "$p_{final}$", ha="center", size=S)
+    box(ax, dx + 42, y3c - 7, 28, 14, "Decision — Eq. (16)", ["$\\hat y = 1[\\,p_{final} \\geq t^{*}]$",
+                                                            "$t^{*}$: sensitivity ≥ 0.95 on validation"],
         fill=TINT, title_size=T, line_size=L)
-    label(ax, LX, y8 + h8 / 2, "Decision support")
+    arrow(ax, (dx + 38.1, y3c), (dx + 42, y3c))
 
-    # ---- connectors
-    dash = dict(color=RULE)
-    arrow(ax, (cA, y1 + h1), (cA, y2)); arrow(ax, (cB, y1 + h1), (cB, y2))
-    ax.plot([cC, cC], [y1 + h1, y2 - 1.2], color=RULE, lw=0.8, ls=(0, (2.2, 1.6)))
-    arrow(ax, (cC, y2 - 1.2), (cC, y2))
-    arrow(ax, (cA, y2 + h2), (cA, y3)); arrow(ax, (cB, y2 + h2), (cB, y3))
-    ax.plot([cC, cC], [y2 + h2, y3 - 1.2], color=RULE, lw=0.8, ls=(0, (2.2, 1.6)))
-    arrow(ax, (cC, y3 - 1.2), (cC, y3))
-    arrow(ax, (A[0] + A[1], y3 + h3 / 2), (B[0], y3 + h3 / 2))                 # backbone → fusion
-    fx = B[0] + (right - B[0]) / 2
-    ybus = y3 + h3 + 3
-    ax.plot([fx, fx], [y3 + h3, ybus], color=RULE, lw=0.8)
-    ax.plot([lc[0], lc[3]], [ybus, ybus], color=RULE, lw=0.8)
-    for x in lc:
-        arrow(ax, (x, ybus), (x, y4))
-    for x in lc:
-        arrow(ax, (x, y4 + h4), (x, y5))
-    dcx = dx + dw / 2
-    arrow(ax, (dcx, y5 + h5), (dcx, y6))                                        # ensemble → decision
-    arrow(ax, (px + pw, y6 + h6 / 2), (dx, y6 + h6 / 2))                        # prior → decision
-    ybus2 = y6 + h6 + 2.8
-    scx = px + pw / 2
-    ax.plot([dcx, dcx], [y6 + h6, ybus2], color=RULE, lw=0.8)
-    ax.plot([scx, dcx], [ybus2, ybus2], color=RULE, lw=0.8)
-    arrow(ax, (scx, ybus2), (scx, y7)); arrow(ax, (dcx, ybus2), (dcx, y7))
-    ybus3 = y7 + h7 + 3
-    ax.plot([scx, scx], [y7 + h7, ybus3], color=RULE, lw=0.8)
-    ax.plot([dcx, dcx], [y7 + h7, ybus3], color=RULE, lw=0.8)
-    ax.plot([scx, dcx], [ybus3, ybus3], color=RULE, lw=0.8)
-    ox = A[0] + (right - A[0]) / 2
-    arrow(ax, (ox, ybus3), (ox, y8))
+    # ------------------------------------------------------------------ (b) fuzzy front end
+    yb = 116
+    panel_title(ax, 2, yb - 4.5, "(b)", "Fuzzy front end, Eqs. (1)–(8); every map is H × W")
+    chain = [("min–max", "$\\tilde x$ · Eq. (1)"), ("local stats", "$c, \\sigma$ on $W_p$ · (2)"),
+             ("descriptors", "$T, K, q$ · (3)"), ("membership", "$\\mu(p)$ · (4)"),
+             ("radius, weight", "$r(p), w(p)$ · (5)–(6)"), ("weighted ε / δ", "$\\varepsilon_w, \\delta_w$ · (7)"),
+             ("open / close", "$\\lambda O + (1-\\lambda) C$ · (8)")]
+    bw, bh, gap = 14.8, 10, 2.1
+    x = 2
+    for i, (t, l_) in enumerate(chain):
+        acc = i >= 2
+        box(ax, x, yb, bw, bh, t, [l_], fill=ACCENT_FILL if acc else "white", edge=ACCENT if acc else RULE,
+            title_color=ACCENT if acc else INK, title_size=5.6, line_size=4.7, gap=1.0)
+        if i:
+            arrow(ax, (x - gap, yb + bh / 2), (x, yb + bh / 2))
+        x += bw + gap
+    label(ax, 2 + 2 * (bw + gap) + bw / 2, yb - 1.6, "$T$ texture, $K$ contrast, $q$ quality", ha="center", size=4.4)
+    label(ax, 2, yb + bh + 3.2, "$\\tilde x$ and $F$ become the two input channels of (a); $q$ becomes $Q_{img}$; "
+                                "$\\alpha, \\beta, \\gamma, \\lambda$ selected on validation by Dice.", ha="left", size=S)
 
-    # ---- legend
-    yl = 144.5
-    def key(x, text, **kw):
-        ax.add_patch(FancyBboxPatch((x, yl - 1.6), 5, 3.2, boxstyle="round,pad=0,rounding_size=0.6", zorder=2,
-                                    linewidth=kw.get("lw", 0.8), edgecolor=kw.get("edge", RULE),
-                                    facecolor=kw.get("fill", "white"), linestyle=kw.get("ls", "-")))
-        label(ax, x + 6.5, yl, text, ha="left", size=6.0)
-    key(A[0], "evaluated on TN3K")
-    key(A[0] + 38, "defined by the framework, not available in TN3K", ls=(0, (2.2, 1.6)))
-    key(A[0] + 104, "contribution of this work", fill=ACCENT_FILL, edge=ACCENT, lw=1.0)
+    # ------------------------------------------------------------------ (c) residual block
+    cx0 = 132
+    panel_title(ax, cx0, yb - 4.5, "(c)", "Basic block of (a)")
+    bx, by = cx0 + 2, yb
+    steps = [("3×3 conv, BN, ReLU", CONV_FILL, CONV_EDGE), ("3×3 conv, BN", CONV_FILL, CONV_EDGE)]
+    cw, ch = 24, 4.6
+    arrow(ax, (bx + cw / 2, by - 1.5), (bx + cw / 2, by))
+    for i, (t, f, e) in enumerate(steps):
+        yy = by + i * (ch + 2.2)
+        ax.add_patch(FancyBboxPatch((bx, yy), cw, ch, boxstyle="round,pad=0,rounding_size=0.7", facecolor=f,
+                                    edgecolor=e, linewidth=0.8, zorder=2))
+        ax.text(bx + cw / 2, yy + ch / 2, t, ha="center", va="center", fontsize=S, color=INK, zorder=3)
+        if i:
+            arrow(ax, (bx + cw / 2, yy - 2.2), (bx + cw / 2, yy))
+    yplus = by + 2 * (ch + 2.2) + 1.2
+    node(ax, bx + cw / 2, yplus, "+", r=1.7, size=6.5)
+    arrow(ax, (bx + cw / 2, by + 2 * ch + 2.2), (bx + cw / 2, yplus - 1.7))
+    ax.plot([bx + cw / 2, bx + cw + 4, bx + cw + 4], [by - 1.5, by - 1.5, yplus], color=RULE, lw=0.8, zorder=1)
+    arrow(ax, (bx + cw + 4, yplus), (bx + cw / 2 + 1.7, yplus))
+    label(ax, bx + cw + 5, (by - 1.5 + yplus) / 2, "identity\n(1×1 conv, /2\nat stage entry)", ha="left", size=4.6)
+    label(ax, bx + cw / 2, yplus + 3.6, "ReLU", ha="center", size=S, color=INK)
+
+    # ------------------------------------------------------------------ legend
+    yl = 139.5
+    def key(x, text, fill="white", edge=RULE, ls="-", lw=0.8):
+        ax.add_patch(FancyBboxPatch((x, yl - 1.5), 4.5, 3, boxstyle="round,pad=0,rounding_size=0.5", zorder=2,
+                                    linewidth=lw, edgecolor=edge, facecolor=fill, linestyle=ls))
+        label(ax, x + 5.8, yl, text, ha="left", size=5.4)
+    key(2, "fuzzy processing (this work)", ACCENT_FILL, ACCENT, lw=1.0)
+    key(42, "convolution", CONV_FILL, CONV_EDGE)
+    key(64, "dense / pooling", FC_FILL, FC_EDGE)
+    key(90, "learners, fusion, decision")
+    key(128, "defined by the framework, no data in TN3K", ls=DASH)
     print(save(fig, "fig2_architecture", a.out))
 
 
