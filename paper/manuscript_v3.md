@@ -271,7 +271,7 @@ Explanation quality was measured rather than assumed: Grad-CAM faithfulness by d
 
 # 3.12 Evaluation and statistical analysis
 
-The analysis plan below was fixed before the test partition was scored and is implemented verbatim in the released code. All confidence intervals are 95 % intervals from 2,000 bootstrap resamples of the test images; predictions of the five seeds are averaged before the metrics are computed and the seed-to-seed standard deviation of the AUC is reported alongside.
+The analysis plan below was fixed before the test partition was scored and is implemented verbatim in the released code. All confidence intervals are 95 % intervals from 2,000 bootstrap resamples of the test images; predictions of the five seeds are averaged before the metrics are computed, for every model alike, and the seed-to-seed standard deviation of the AUC is reported alongside. This seed average is itself a small ensemble and raises the AUC of every model above its single-seed value; the per-seed values are given in Supplementary Table S3.
 
 | Task | Metrics | Comparison test |
 | ---------------------------- | ---------------------------- | ---------------------------- |
@@ -299,7 +299,7 @@ The analysis plan below was fixed before the test partition was scored and is im
 | Image pipeline | nodule-centered crop of 1.5× the bounding box, resized to 224 × 224; window k = 7; L = 256; ε = 10⁻⁶; augmentation: horizontal flip, ±10° rotation, brightness ±10 % |
 | Optimization | AdamW, lr 3×10⁻⁴, weight decay 10⁻⁴, batch 32, cosine schedule, ≤ 30 epochs, early stopping on validation AUC (patience 6), class-balanced BCE |
 | Selected hyperparameters | α = 2, β = 0.5, γ = 2, λ = 0, τ = 0.05 (all seeds), $t^{\ast}$ = 0.134; learner grids and selected values in Supplementary Table S2 |
-| Code and weights | \[\[public repository URL, commit hash\]\]; trained weights \[\[DOI\]\] |
+| Code and weights | https://github.com/Mrkomiljon/tames-ai, commit 4a863f5; trained weights \[\[DOI\]\] |
 
 # 4. System Architecture
 
@@ -338,7 +338,7 @@ With the parameters selected on validation (α = 2, β = 0.5, γ = 2, λ = 0), t
 | FSVM learner alone | 0.788 \[0.748, 0.826\] | 91.9 | 22.5 | 49.2 | 58.2 | 0.187 | 0.177 | 0.011 |
 | TAMES AI | 0.815 \[0.779, 0.848\] | 94.9 | 32.3 | 56.4 | 62.6 | 0.320 | 0.169 | 0.020 |
 
-TAMES AI did not outperform the image-only CNN (ΔAUC −0.015 \[−0.032, +0.003\], DeLong p = 0.10, Holm p = 0.50) or the late fusion (ΔAUC +0.012 \[−0.008, +0.033\], p = 0.24, Holm p = 0.73); McNemar tests on sensitivity and specificity at the fixed thresholds gave p = 0.69 and 0.90. The descriptor-only model was clearly weaker (ΔAUC +0.131 for TAMES AI, p < 0.001), so the image carries most of the signal when an expert delineation is available; the late fusion's operating point traded sensitivity (92.4 %) for a higher specificity (50.8 %). Figure 4a shows the ROC curves. The learned ensemble weights, averaged over seeds, were $ω_{DL}$ = 0.16, $ω_{RF}$ = 0.05, $ω_{XGB}$ = 0.37, $ω_{FSVM}$ = 0.42 at τ = 0.05, i.e. the ensemble leaned on the two learners with the lowest validation log-loss.
+TAMES AI did not outperform the image-only CNN (ΔAUC −0.015 \[−0.032, +0.003\], DeLong p = 0.10, Holm p = 0.50) or the late fusion (ΔAUC +0.012 \[−0.008, +0.033\], p = 0.24, Holm p = 0.73); McNemar tests on sensitivity and specificity at the fixed thresholds gave p = 0.69 and 0.90. The descriptor-only model was clearly weaker (ΔAUC +0.131 for TAMES AI, p < 0.001), so the image carries most of the signal when an expert delineation is available; the late fusion's operating point traded sensitivity (92.4 %) for a higher specificity (50.8 %). Figure 4a shows the ROC curves. The learned ensemble weights, averaged over seeds, were $ω_{DL}$ = 0.16, $ω_{RF}$ = 0.05, $ω_{XGB}$ = 0.37, $ω_{FSVM}$ = 0.42 at τ = 0.05, i.e. the ensemble leaned on the two learners with the lowest validation log-loss. The single-seed AUCs were lower for every model (mean 0.774 for TAMES AI, 0.804 for the image-only CNN; Supplementary Table S3): averaging the five seeds adds about 0.03–0.04 AUC to each model alike, so the comparisons above are unaffected by it.
 
 ![](figures/fig4_roc.png){width=170mm}
 
@@ -447,7 +447,7 @@ An uncertainty-aware thyroid-nodule classifier built from adaptive fuzzy image p
 
 **Data availability.** The TN3K images and masks are available from the TRFE-Net repository \[35, 36\] and the classification labels from the ACL release \[37\], under their authors' terms; this study redistributes neither. The derived split table, selected parameters, per-image predictions and all result files are released with the code.
 
-**Code availability.** Training and evaluation code, the statistical analysis plan and the trained weights are available at \[\[repository URL, commit hash, DOI\]\].
+**Code availability.** Training and evaluation code, the statistical analysis plan and the trained weights are available at https://github.com/Mrkomiljon/tames-ai (commit 4a863f5); the trained weights are deposited at \[\[Zenodo DOI\]\].
 
 **Ethics approval and consent.** Not required: the study used only publicly available, de-identified images released for research by their authors.
 

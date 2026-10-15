@@ -55,7 +55,7 @@ TAMES AI: An Adaptive Fuzzy, Multimodal Ensemble Model for Malignancy Risk Asses
 
 **Table S2.** Every value was selected on the validation partition; the test partition played no part. Grids are those of configs/default.yaml in the released code.
 
-| Component | Hyperparameter | Grid or fixed value | Selection criterion | Selected |
+| Component | Hyperparameter | Grid or fixed value | Selection criterion | Selected (seeds 0 / 1 / 2 / 3 / 4; one value when identical) |
 | ---------------------------- | ---------------------------- | ---------------------------- | ---------------------------- | ---------------------------- |
 | Fuzzy layer (Eqs. 1–8) | α | {0, 0.25, 0.5, 1, 2} | Dice of Otsu(F) against the dataset masks on 150 validation images | 2 |
 |  | β | {0, 0.25, 0.5, 1, 2} | same | 0.5 |
@@ -68,10 +68,10 @@ TAMES AI: An Adaptive Fuzzy, Multimodal Ensemble Model for Malignancy Risk Asses
 | Random forest | n\_estimators | 500 | fixed | — |
 |  | max\_features | {sqrt, 0.3} | validation AUC | 0.3 / 0.3 / 0.3 / 0.3 / sqrt |
 |  | min\_samples\_leaf | {1, 3, 5} | validation AUC | 1 / 5 / 3 / 3 / 1 |
-| XGBoost | n\_estimators | ≤ 600 with early stopping (30 rounds) on validation | validation log-loss (early stopping) | 51 / 17 / 55 / 62 / 32 |
+| XGBoost | n\_estimators | ≤ 600 with early stopping (30 rounds) on validation | validation log-loss (early stopping) | best iteration 51 / 17 / 55 / 62 / 32 |
 |  | max\_depth | {3, 4, 6} | validation AUC | 6 / 3 / 6 / 4 / 3 |
 |  | learning\_rate | {0.03, 0.1} | validation AUC | 0.03 / 0.1 / 0.03 / 0.03 / 0.03 |
-|  | subsample / colsample\_bytree | 0.8 / {0.6, 0.8} | validation AUC | subsample 0.8 (all seeds); colsample 0.6 / 0.8 / 0.8 / 0.8 / 0.8 |
+|  | subsample / colsample\_bytree | 0.8 / {0.6, 0.8} | validation AUC | 0.8 (all seeds) / 0.6, 0.8, 0.8, 0.8, 0.8 |
 | Fuzzy SVM (Eqs. 12–13) | C | {0.3, 1, 3, 10} | validation AUC of the decision value | 10 / 10 / 10 / 10 / 3 |
 |  | γ (RBF) | {scale, 0.01, 0.1} | same | scale / 0.01 / 0.01 / scale / 0.1 |
 |  | membership δ; calibration | 10⁻³; Platt scaling fitted on validation | fixed | — |
@@ -80,10 +80,10 @@ TAMES AI: An Adaptive Fuzzy, Multimodal Ensemble Model for Malignancy Risk Asses
 
 # S3. Seed-level results
 
-**Table S3.** Test AUC of every model by seed (expert delineation and fully automatic settings), with mean and standard deviation across seeds; the pooled values of Tables 3 and 5 are computed on the concatenated predictions of the five seeds.
+**Table S3.** Test AUC of every model by seed (expert delineation and fully automatic settings), with mean and population standard deviation across seeds. The values in Tables 3 and 5 of the main text are computed on the probabilities averaged over the five seeds, which acts as a small ensemble and is applied identically to every model; they are therefore higher than the per-seed means shown here.
 
 | Model | Setting | Seed 0 | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Mean | SD |
-| --------------------------- | ----------- | -------------- | -------------- | -------------- | -------------- | -------------- | -------------- | -------------- |
+| --------------------------- | ----------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 | TAMES AI | expert | 0.775 | 0.765 | 0.791 | 0.798 | 0.740 | 0.774 | 0.020 |
 | Image-only CNN | expert | 0.808 | 0.817 | 0.823 | 0.775 | 0.799 | 0.804 | 0.017 |
 | CNN + XGBoost late fusion | expert | 0.782 | 0.800 | 0.779 | 0.773 | 0.795 | 0.786 | 0.010 |
