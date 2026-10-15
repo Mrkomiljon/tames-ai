@@ -1,7 +1,8 @@
 # Figures
 
-All figures are produced by `scripts/plots/*.py` from saved data only (no retraining). Shared style in
-`scripts/plots/_style.py`: Okabe–Ito palette with one fixed colour and line style per model in every figure
+All figures are produced by `scripts/plots/*.py` from saved data only (no retraining). Figures 1 and 2 (diagrams)
+use `scripts/plots/figstyle_diagram.py` (`setup_font()` picks Helvetica on this Mac; both scripts accept `--out`);
+Figures 3 to 8 and S1 share `scripts/plots/_style.py`: Okabe–Ito palette with one fixed colour and line style per model in every figure
 (TAMES AI blue solid; image-only CNN orange dashed; late fusion green dash-dot; descriptor-only XGBoost grey
 dotted; TAMES AI with Q_m = 1 purple thin; single learners light grey thin), Helvetica/Arial, 8 pt axes, 7 pt
 ticks and legends, 9 pt bold panel letters, every symbol in mathtext, PDF (vector) + PNG at 600 dpi cropped to
@@ -12,8 +13,8 @@ content (`bbox_inches='tight'`, pad 0.02 in), widths 85 mm (single column) or 17
 
 | Figure | File | Script | Inputs |
 |---|---|---|---|
-| 1 | `fig1_flow.{pdf,png}` (85 mm) | `fig1_flow.py` | `data/processed/splits.csv` |
-| 2 | `fig2_architecture.{pdf,png}` (170 mm) | `fig2_architecture.py` | none (Section 4 layers, Section 3 equation numbers) |
+| 1 | `fig1_flow.{pdf,png}` | `fig1_flow.py` (+ `figstyle_diagram.py`) | `data/processed/splits.csv` |
+| 2 | `fig2_architecture.{pdf,png}` | `fig2_architecture.py` (+ `figstyle_diagram.py`) | none (Section 4 layers, Section 3 equation numbers; key: evaluated / defined / contribution) |
 | 3 | `fig3_samples.{pdf,png}` (170 mm) | `fig3_samples.py` | `data/raw/tn3k` images and masks, `data/processed/{splits.csv, meta_test.csv, X_test.npy, fuzzy_params.json}`, `runs/tn3k_fold0/ensemble_tames_seed0/{p_pooled_test.npy, model_order.json, results.json}`; the whole-image maps μ and F and Otsu(F) are recomputed from the raw image with the saved parameters |
 | 4 | `fig4_roc.{pdf,png}` (170 mm) | `fig4_roc.py` | pooled test predictions and `results.json` of `runs/tn3k_fold0` (a) and `runs/tn3k_automask` (b); labels from `meta_test.csv` |
 | 5 | `fig5_robustness.{pdf,png}` (170 mm) | `fig5_robustness.py` | `runs/tn3k_fold0/robustness/robustness.csv` |
