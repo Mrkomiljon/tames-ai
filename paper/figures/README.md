@@ -26,10 +26,10 @@ Notes.
 * Figure 3 rows: three benign (two true negatives, one false positive) above three malignant (two true positives,
   one false negative) at t*, drawn with `numpy.random.default_rng(0)`; every panel is a square (the whole image is
   padded with black); μ and F are shown with a per-map 1–99th-percentile display stretch (magma; state "display
-  range 1–99th percentile" in the caption); column (v) draws the largest connected component of Otsu(F) that overlaps the
-  delineation (if none overlaps, the largest component inside the crop) as a solid blue contour and the radiologist
-  delineation as a dashed vermilion contour (contour: largest component overlapping the delineation; Dice: whole
-  image, from `meta_test.csv`); column (i) pads the image to square with white and frames the actual image extent.
+  range 1–99th percentile" in the caption); column (v) shows the raw Otsu(F) foreground as a translucent blue fill with the expert delineation as a
+  dashed white outline, without post-processing, so the panel shows exactly what the Dice in Section 5.2 was computed on
+  (caption: "(v) foreground of the Otsu threshold of F over the crop, expert delineation dashed; Dice in Section 5.2
+  is computed on the whole image"); column (i) pads the image to square with white and frames the actual image extent.
 * Figure 8a: x-axis scaled to the descriptors (0 to 1.1 × the largest descriptor value); the image-embedding bar
   is hatched, clipped at the axis edge and labelled with its value (0.278, 84.9 % of the total); the other bars are
   split into ω_k·mean|φ_k| per learner, rescaled so the parts sum to the ensemble mean |SHAP| of that feature; the

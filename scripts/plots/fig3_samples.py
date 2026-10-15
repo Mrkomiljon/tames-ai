@@ -2,19 +2,20 @@
 """Figure 3 — real TN3K test images through the fuzzy front end. Six rows (3 benign on top, 3 malignant below) chosen
 deterministically (seed 0) so that one false positive and one false negative at t* are included. Columns: (i) image padded
 to square with the radiologist contour and the 1.5× crop box, (ii) crop x̃, (iii) μ, (iv) F (both with a per-map 1–99th
-percentile display stretch, magma), (v) the largest Otsu(F) component overlapping the delineation as a solid contour and the
-delineation as a dashed contour over the greyscale crop, with the per-image whole-image Dice. Inputs: data/raw (images, masks), data/processed/{splits,meta_test}.csv,
+percentile display stretch, magma), (v) the raw Otsu(F) foreground as a translucent blue fill over the greyscale crop (no post-processing) with
+the expert delineation as a dashed white outline and the per-image whole-image Dice. Inputs: data/raw (images, masks), data/processed/{splits,meta_test}.csv,
 X_test.npy, fuzzy_params.json, saved predictions. Maps are recomputed from the raw image with the saved parameters.
     python scripts/plots/fig3_samples.py"""
 import sys, json; sys.path.insert(0, "scripts/plots"); sys.path.insert(0, ".")
 import numpy as np, pandas as pd, cv2, matplotlib.pyplot as plt
 from _style import setup, save, results, W2, MM, INK, INK2
 from tames.fuzzy import fuzzy_maps, otsu_binarize
-from skimage.measure import label as cc_label
 from tames.data import load_image, load_mask
 
 setup()
-C1, C2 = "#0072B2", "#D55E00"  # Otsu(F) contour / radiologist delineation
+C1, C2 = "#0072B2", "#D55E00"  # crop box, Otsu(F) fill / radiologist delineation in column (i)
+from matplotlib.colors import ListedColormap
+fill = ListedColormap([(0, 0, 0, 0), (0.0, 0.447, 0.698, 0.35)])  # translucent Okabe–Ito blue for the raw Otsu(F) foreground
 R, order, d = results(); P = np.load(f"{d}/p_pooled_test.npy")[order.index("tames")]; t = R["models"]["tames"]["threshold"]["t_star"]
 meta = pd.read_csv("data/processed/meta_test.csv"); sp = pd.read_csv("data/processed/splits.csv").set_index("id")
 X = np.load("data/processed/X_test.npy", mmap_mode="r"); fz = json.load(open("data/processed/fuzzy_params.json"))
@@ -27,19 +28,6 @@ print("rows:", [(meta.id[i], kind(i), round(float(P[i]), 2)) for i in rows])
 def square(a, fill=0):
     h, w = a.shape[:2]; s = max(h, w); out = np.full((s, s) + a.shape[2:], fill, dtype=a.dtype)
     oy, ox = (s - h) // 2, (s - w) // 2; out[oy:oy + h, ox:ox + w] = a; return out, oy, ox
-
-def nodule_component(seg, gt, box):
-    """Connected component(s) of the binarized map to draw: the largest component overlapping the delineation;
-    if none overlaps, the largest component inside the crop box."""
-    lab = cc_label(seg); best, size = 0, 0
-    for k in range(1, lab.max() + 1):
-        comp = lab == k; n = int((comp & gt).sum())
-        if n > size: best, size = k, n
-    if best == 0:
-        y0, y1, x0, x1 = box; sub = lab[y0:y1, x0:x1]
-        ids, counts = np.unique(sub[sub > 0], return_counts=True)
-        if len(ids): best = int(ids[np.argmax(counts)])
-    return lab == best if best else np.zeros_like(seg, dtype=bool)
 
 def stretch(m):
     lo, hi = np.percentile(m, [1, 99]); return np.clip((m - lo) / max(hi - lo, 1e-6), 0, 1)
@@ -61,14 +49,13 @@ for r, i in enumerate(rows):
     axes[r, 1].imshow(x_t[0], cmap="gray", vmin=0, vmax=1)
     im = axes[r, 2].imshow(stretch(x_t[1]), cmap="magma", vmin=0, vmax=1); axes[r, 3].imshow(stretch(x_t[2]), cmap="magma", vmin=0, vmax=1)
     ax = axes[r, 4]; ax.imshow(x_t[0], cmap="gray", vmin=0, vmax=1)
-    comp = nodule_component(seg, mask, (y0, y1, x0, x1))
-    cs = cv2.resize(comp[y0:y1, x0:x1].astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST)
+    cs = cv2.resize(seg[y0:y1, x0:x1].astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST)
     cm = cv2.resize(mask[y0:y1, x0:x1].astype(np.uint8), (224, 224), interpolation=cv2.INTER_NEAREST)
-    ax.contour(cs, levels=[0.5], colors=[C1], linewidths=0.6); ax.contour(cm, levels=[0.5], colors=[C2], linewidths=0.6, linestyles="dashed")
+    ax.imshow(cs, cmap=fill, vmin=0, vmax=1, interpolation="nearest"); ax.contour(cm, levels=[0.5], colors=["white"], linewidths=0.7, linestyles="dashed")
     ax.text(0.04, 0.04, f"Dice {m.dice_afmo:.2f}", transform=ax.transAxes, fontsize=5.8, color=INK, va="bottom", bbox=dict(fc="white", ec="none", pad=1.2))
     axes[r, 0].set_ylabel(f"{m.id} · {'malignant' if y[i] else 'benign'} · {kind(i)} · p = {P[i]:.2f}", fontsize=6, color=INK, rotation=0, ha="right", va="center", labelpad=4)
     for ax in axes[r]: ax.set_xticks([]); ax.set_yticks([]); ax.grid(False); [s_.set_visible(False) for s_ in ax.spines.values()]
-for c, ttl in enumerate(["(i) image, delineation, crop box", "(ii) crop $\\tilde{x}$", "(iii) membership $\\mu$", "(iv) map $F$", "(v) Otsu($F$) and delineation"]):
+for c, ttl in enumerate(["(i) image, delineation, crop box", "(ii) crop $\\tilde{x}$", "(iii) membership $\\mu$", "(iv) map $F$", "(v) Otsu($F$) foreground"]):
     axes[0, c].set_title(ttl, fontsize=6.8, color=INK, pad=4)
 cax = fig.add_subplot(gs[:, 5]); cb = fig.colorbar(im, cax=cax); cb.set_label("normalized (display range 1–99th percentile)", fontsize=6); cb.ax.tick_params(labelsize=6); cb.outline.set_linewidth(0.4)
 cax.set_position([cax.get_position().x0, 0.3, cax.get_position().width, 0.4])
