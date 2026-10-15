@@ -14,6 +14,6 @@ for i, m in enumerate(["tames", "cnn_image_only", "late_fusion_cnn_xgb", "xgb_st
     ax.errorbar(x, s.auc, yerr=[s.auc - s.ci_low, s.ci_high - s.auc], fmt="o", ms=3, color=c, ecolor=c, elinewidth=0.7, capsize=1.5, zorder=3)
     ax.plot(x, s.auc, ls, color=c, lw=lw, label=lab, zorder=2)
 ax.set_xscale("log"); ax.set_xticks([10, 25, 50, 100]); ax.set_xticklabels(["10 %", "25 %", "50 %", "100 %"]); ax.minorticks_off()
-ax.set_xlabel("fraction of training images"); ax.set_ylabel("test AUC"); ax.set_ylim(0.6, 0.88)
-ax.legend(loc="upper left", fontsize=6.3)
+ax.set_xlabel("fraction of training images"); ax.set_ylabel("test AUC"); ax.set_ylim(0.55, 0.88)
+ax.legend(loc="lower right", fontsize=6.3, frameon=False)
 save(fig, "fig6_lowdata")

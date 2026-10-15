@@ -28,7 +28,7 @@ for k, (name, tv) in enumerate((("t* (sensitivity ≥ 0.95 on validation)", thr[
     ax.imshow(cm, cmap="Blues", vmin=0, vmax=cm.max() * 1.6)
     for i in range(2):
         for j in range(2): ax.text(j, i, f"{cm[i, j]}", ha="center", va="center", fontsize=8, color=INK)
-    ax.set_xticks([0, 1]); ax.set_xticklabels(["pred. malignant", "pred. benign"], fontsize=6); ax.set_yticks([0, 1]); ax.set_yticklabels(["malignant", "benign"], fontsize=6)
+    ax.set_xticks([0, 1]); ax.set_xticklabels(["pred. malignant", "pred. benign"], fontsize=6); ax.set_yticks([0, 1]); ax.set_yticklabels(["malignant", "benign"] if k == 0 else ["", ""], fontsize=6)
     ax.set_title(f"{name}\nt = {tv:.3f}", fontsize=6.5, color=INK, pad=4); ax.tick_params(length=0)
     for sp_ in ax.spines.values(): sp_.set_visible(False)
 b.text(0.0, 1.0, "(b)", transform=b.transAxes, fontsize=9, fontweight="bold", color=INK, va="bottom")

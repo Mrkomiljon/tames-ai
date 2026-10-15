@@ -14,7 +14,7 @@ MODEL = {  # key: (label, colour, linestyle, linewidth)
     "cnn_image_only": ("image-only CNN", "#E69F00", "--", 1.3),
     "late_fusion_cnn_xgb": ("CNN + XGBoost late fusion", "#009E73", "-.", 1.3),
     "xgb_struct_only": ("descriptor-only XGBoost", "#7f7f7f", ":", 1.3),
-    "tames_quality_off": ("TAMES AI, Q_m = 1", "#CC79A7", "-", 0.9),
+    "tames_quality_off": ("TAMES AI, $Q_m = 1$", "#CC79A7", "-", 0.9),
     "dl_only": ("DL learner alone", "#bbbbbb", "-", 0.7),
     "rf_only": ("RF learner alone", "#bbbbbb", "--", 0.7),
     "xgb_only": ("XGB learner alone", "#bbbbbb", "-.", 0.7),
@@ -46,8 +46,8 @@ def panel(ax, letter, dx=-0.14, dy=1.03):
     ax.text(dx, dy, f"({letter})", transform=ax.transAxes, fontsize=9, fontweight="bold", color=INK, ha="left", va="bottom")
 
 def save(fig, stem):
-    fig.savefig(f"paper/figures/{stem}.pdf", bbox_inches="tight")
-    fig.savefig(f"paper/figures/{stem}.png", dpi=600, bbox_inches="tight")
+    fig.savefig(f"paper/figures/{stem}.pdf", bbox_inches="tight", pad_inches=0.02)
+    fig.savefig(f"paper/figures/{stem}.png", dpi=600, bbox_inches="tight", pad_inches=0.02)
     print("wrote", f"paper/figures/{stem}.{{pdf,png}}")
 
 def results(run="runs/tn3k_fold0"):

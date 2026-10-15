@@ -9,7 +9,7 @@ from _style import setup, save, line, band, panel, W2, MM, INK2
 setup()
 d = pd.read_csv("runs/tn3k_fold0/robustness/robustness.csv")
 clean = d[d.degradation == "clean"]
-names = {"gaussian_noise": "Gaussian noise (σ)", "speckle_noise": "speckle noise (σ)", "blur": "blur (σ, px)", "contrast": "contrast (factor)"}
+names = {"gaussian_noise": "Gaussian noise ($\\sigma$)", "speckle_noise": "speckle noise ($\\sigma$)", "blur": "blur ($\\sigma$, px)", "contrast": "contrast (factor)"}
 fig, axes = plt.subplots(1, 4, figsize=(W2, 58 * MM), sharey=True)
 for k, (g, ax) in enumerate(zip(names, axes)):
     sub = pd.concat([clean, d[d.degradation == g]]); levels = list(dict.fromkeys(sub.level)); xs = np.arange(len(levels))
@@ -21,7 +21,7 @@ for k, (g, ax) in enumerate(zip(names, axes)):
     if k == 0:
         ax.set_ylabel("test AUC")
         ax2 = ax.twinx(); q = sub[sub.model == "tames"].set_index("level").loc[levels].mean_q.values
-        ax2.plot(xs, q, color=INK2, lw=0.6, marker="s", ms=2, ls="-", alpha=0.8); ax2.set_ylim(0, 1); ax2.set_ylabel("mean q̄ (grey)", color=INK2, fontsize=7)
+        ax2.plot(xs, q, color=INK2, lw=0.6, marker="s", ms=2, ls="-", alpha=0.8); ax2.set_ylim(0, 1); ax2.set_ylabel("mean $\\bar{q}$ (grey)", color=INK2, fontsize=7)
         ax2.tick_params(axis="y", labelsize=6, colors=INK2); ax2.spines["right"].set_visible(True); ax2.spines["right"].set_color(INK2); ax2.grid(False)
 h, l = axes[1].get_legend_handles_labels()
 fig.legend(h, l, loc="lower center", ncol=4, fontsize=6.5, bbox_to_anchor=(0.5, -0.04), handlelength=2.4)

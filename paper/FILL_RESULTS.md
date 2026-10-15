@@ -25,7 +25,8 @@ bibliographic data from the publisher pages).
 
 ## C. Figures to produce (scripts to write under scripts/plots/, from saved predictions only)
 - Figure 1: image flow (3,493 → 2,303 / 576 / 614), a simple box diagram.
-- Figure 3: ROC curves of all Table-3 models on the test set, AUC + CI in the legend
+- Figure 3 (v3 numbering): dataset samples and fuzzy pipeline; μ and F are shown with a per-map 1–99th-percentile display stretch (state "display range 1–99th percentile" in the caption).
+- Figure 4 (v3 numbering): ROC curves of all Table-3 models on the test set, AUC + CI in the legend
   (`p_pooled_test.npy`, `model_order.json`, labels from `meta_test.csv`).
 - Figure 4: `runs/tn3k_fold0/robustness/robustness.png` (exists).
 - Figure 5: `runs/lowdata.png` (exists).
