@@ -62,6 +62,7 @@ Or step by step (`--set key=value` overrides any config entry):
 | 11 | `11_predict.py --image img.jpg [--mask mask.png] [--cam out.png]` | inference on one image with the trained models: per-learner and ensemble probabilities per seed, seed-averaged p_final and label at t*, optional Grad-CAM overlay; without `--mask` the automatic-delineation models are used |
 | 12 | `12_demo_export.py` | `demo/tames_walkthrough.html`: animated walkthrough of six test images (TN, FP, TP, FN) through every pipeline stage, expert and automatic delineation |
 | 13 | `13_demo_server.py [--port 8765]` | live walkthrough UI on localhost: upload an image (and optionally a mask) and watch the same stages computed by the trained models |
+| 14 | `14_fit_ood.py [--eval-dir folder]` | out-of-distribution gate for 11 and 13 (`tames/ood.py`): k-NN distance in ImageNet ResNet-18 feature space to the TN3K training images, thresholds from validation (`runs/ood/`); uploads that do not look like a thyroid B-mode frame get no diagnosis |
 | 8 | `08_robustness.py` (optional, after 3–5) | `robustness/` AUC of TAMES vs image-only CNN and late fusion under noise, speckle, blur and contrast loss applied to the raw test images (front end recomputed, models frozen); `robustness.png` |
 
 ## Results (official TN3K test set, 614 images, predictions pooled over 5 seeds)

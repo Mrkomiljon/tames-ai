@@ -21,6 +21,7 @@ from tames.pipeline import load_processed, tabular_block
 from tames.models import get_device
 from tames.models.cnn import load_model, predict
 from tames.models.ensemble import ensemble_probability
+from tames.ood import OODGate
 
 
 def main():
@@ -28,6 +29,7 @@ def main():
     ap.add_argument("--image", required=True); ap.add_argument("--mask", default=None)
     ap.add_argument("--config", default="configs/default.yaml"); ap.add_argument("--run", default=None, help="run directory name; default tn3k_fold0 with --mask, tn3k_automask without")
     ap.add_argument("--seeds", nargs="*", type=int, default=[0, 1, 2, 3, 4]); ap.add_argument("--cam", default=None, help="write a Grad-CAM overlay PNG")
+    ap.add_argument("--force", action="store_true", help="predict even if the OOD gate rejects the image")
     a = ap.parse_args()
     auto = a.mask is None
     run = a.run or ("tn3k_automask" if auto else "tn3k_fold0")
@@ -38,6 +40,11 @@ def main():
     R = json.load(open(rd / "ensemble_tames_seed0/results.json")); t_star = R["models"]["tames"]["threshold"]["t_star"]
     dev = get_device(cfg.get("device", "auto")); size, margin = int(cfg["image"]["size"]), float(cfg["image"]["crop_margin"])
 
+    v = OODGate.load().check(cv2.imread(a.image, cv2.IMREAD_COLOR))
+    print(f"OOD gate: {v['status']} (distance {v['distance']:.3f}; warn > {v['warn']:.3f}, reject > {v['reject']:.3f}; colour {v['colour']}) {v['reasons']}")
+    if v["status"] == "reject" and not a.force:
+        print("The image does not look like a TN3K B-mode thyroid frame; no prediction is made (use --force to override).")
+        return
     img = load_image(a.image); m = fuzzy_maps(img, fz, fz["snr0"])
     mask = (load_mask(a.mask) > 0) if a.mask else otsu_binarize(m["F"], fz["polarity"])
     y0, y1, x0, x1 = nodule_crop(mask, margin)

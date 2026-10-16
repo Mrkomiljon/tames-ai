@@ -16,3 +16,4 @@ runs/**/*
 !runs/**/*.csv
 !runs/**/*.json
 !runs/**/*.png
+!runs/ood/reference.npz

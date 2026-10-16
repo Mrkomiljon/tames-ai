@@ -166,6 +166,22 @@
   .mini .lbl { position: absolute; right: 5px; top: 0; font-family: var(--font-mono); font-size: 0.72rem; line-height: 18px; color: var(--ink); text-shadow: 0 0 3px #000; }
   .w { font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint); }
   .status { font-size: 0.82rem; color: var(--muted); min-height: 1.2em; }
+  .chip.rej { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 55%, transparent); }
+  .oodwarn { grid-column: 1 / -1; display: flex; gap: 10px; align-items: flex-start; font-size: 0.86rem; color: var(--ink-2); background: color-mix(in srgb, var(--amber) 10%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); border-radius: 8px; padding: 8px 12px; }
+  .oodwarn b { color: var(--amber); }
+  .reject { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 20px; background: var(--panel); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); border-radius: 14px; padding: 18px; }
+  .reject h2 { margin: 0 0 8px; font-size: 1.3rem; line-height: 1.25; text-wrap: balance; }
+  .reject h2 span { color: var(--amber); }
+  .reject p { margin: 0 0 10px; color: var(--ink-2); max-width: 62ch; }
+  .reject ul { margin: 0 0 12px; padding-left: 18px; color: var(--ink-2); }
+  .reject img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+  .dist { margin: 6px 0 4px; }
+  .dist .gtrack { height: 26px; }
+  .dist .zone.ok { left: 0; background: color-mix(in srgb, var(--benign) 22%, transparent); }
+  .dist .zone.wa { background: color-mix(in srgb, var(--amber) 22%, transparent); }
+  .dist .zone.re { right: 0; background: color-mix(in srgb, #e5484d 22%, transparent); }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .reject { grid-template-columns: minmax(0, 1fr); } }
   .status.err { color: var(--amber); }
   footer { color: var(--faint); font-size: 0.8rem; border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
   footer a { color: var(--muted); }
@@ -218,9 +234,10 @@
     </aside>
 
     <main>
+      <section class="reject" id="reject" hidden aria-live="polite"></section>
       <section class="summary" id="summary" aria-live="polite"></section>
       <nav class="stages" id="stages" aria-label="Pipeline"></nav>
-      <div class="controls">
+      <div class="controls" id="controls">
         <button class="btn" id="prev" type="button"></button>
         <button class="btn primary" id="play" type="button"></button>
         <button class="btn" id="next" type="button"></button>
@@ -271,6 +288,13 @@
       upDone: (p, l) => `Done: probability ${p} (${l}).`, upErr: "Could not run the model: ",
       offline: "To analyse your own image, start the local server with python scripts/13_demo_server.py and open the address it prints.",
       foot: "Research prototype trained on the public TN3K dataset; not a medical device and not for clinical use.",
+      rejected: "not analysed", rejTitle: "This image does not look like a thyroid ultrasound frame", rejTitleMark: "No diagnosis given.",
+      rejLead: "Before the diagnostic models run, every upload is compared with the 2,303 TN3K training images. This one is too different, so a benign or malignant call would be meaningless. The models were never shown anything like it and would still pick one of the two answers.",
+      rejWhy: "Why it was stopped", rejDo: "Upload a single greyscale B-mode frame of a thyroid nodule, without colour Doppler, annotations or screenshots of other windows.",
+      reasons: { far: "Its overall appearance is far from every training image (distance above the rejection limit).", unusual: "Its appearance is unusual for the training data.", colour: "It is a colour image; TN3K frames are pure greyscale B-mode.", flat: "It is almost uniform (no image content)." },
+      distLbl: "similarity distance to the training images", zOk: "typical", zWarn: "unusual", zRej: "rejected",
+      warnTitle: "Caution:", warnText: "this image is less typical than 99.5 % of validation frames, so treat the result below with extra care.",
+      upRejected: "Not analysed: the image does not look like a thyroid ultrasound frame.",
       desc: {
         area_frac: ["area fraction", "nodule area / image area"], taller_than_wide: ["taller-than-wide", "height / width of the nodule (TI-RADS shape)"],
         eccentricity: ["eccentricity", "how elongated the fitted ellipse is"], solidity: ["solidity", "area / convex-hull area; low = lobulated margin"],
@@ -350,6 +374,13 @@
       upDone: (p, l) => `Tayyor: ehtimollik ${p} (${l}).`, upErr: "Modelni ishga tushirib bo‘lmadi: ",
       offline: "O‘z tasviringizni tahlil qilish uchun lokal serverni python scripts/13_demo_server.py bilan ishga tushiring va u ko‘rsatgan manzilni oching.",
       foot: "Ochiq TN3K to‘plamida o‘qitilgan tadqiqot prototipi; tibbiy qurilma emas va klinik amaliyot uchun mo‘ljallanmagan.",
+      rejected: "tahlil qilinmadi", rejTitle: "Bu rasm qalqonsimon bez UTT tasviriga o‘xshamaydi", rejTitleMark: "Tashxis berilmaydi.",
+      rejLead: "Diagnostika modellari ishga tushishidan oldin har bir yuklangan rasm TN3K’ning 2 303 ta o‘quv tasviri bilan solishtiriladi. Bu rasm ulardan juda farq qiladi, shuning uchun xavfli yoki xavfsiz degan xulosa ma’nosiz bo‘lardi: modellar bunday rasmni hech qachon ko‘rmagan, lekin baribir ikki javobdan birini tanlagan bo‘lardi.",
+      rejWhy: "Nega to‘xtatildi", rejDo: "Qalqonsimon bez tugunining bitta kulrang B-rejim tasvirini yuklang: rangli Doppler, belgilar yoki boshqa oyna skrinshotlarisiz.",
+      reasons: { far: "Umumiy ko‘rinishi barcha o‘quv tasvirlaridan juda uzoq (masofa rad etish chegarasidan katta).", unusual: "Ko‘rinishi o‘quv ma’lumotlari uchun odatiy emas.", colour: "Bu rangli rasm; TN3K tasvirlari faqat kulrang B-rejimda.", flat: "Rasm deyarli bir xil rangda (tasvir mazmuni yo‘q)." },
+      distLbl: "o‘quv tasvirlariga o‘xshashlik masofasi", zOk: "odatiy", zWarn: "odatiy emas", zRej: "rad etiladi",
+      warnTitle: "Diqqat:", warnText: "bu rasm validatsiya tasvirlarining 99.5 % idan kamroq odatiy, shuning uchun quyidagi natijaga ehtiyotkorlik bilan qarang.",
+      upRejected: "Tahlil qilinmadi: rasm qalqonsimon bez UTT tasviriga o‘xshamaydi.",
       desc: {
         area_frac: ["maydon ulushi", "tugun maydoni / tasvir maydoni"], taller_than_wide: ["bo‘yi enidan katta", "tugun balandligi / kengligi (TI-RADS shakli)"],
         eccentricity: ["cho‘ziqlik", "mos ellips qanchalik cho‘zilgani"], solidity: ["yaxlitlik", "maydon / qavariq qobiq maydoni; past = bo‘lakli chet"],
@@ -415,10 +446,10 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
   const L = () => T[lang];
   const cur = () => DATA.cases[ci];
-  const run = () => cur().modes[mode] || cur().modes[Object.keys(cur().modes)[0]];
+  const run = () => (cur().rejected ? null : cur().modes[mode] || cur().modes[Object.keys(cur().modes)[0]]);
   const label = (k) => L()[k] || k;
   function outcome(c, m) {
-    const r = c.modes[m]; if (!r || !c.truth) return null;
+    if (c.rejected) return null; const r = c.modes[m]; if (!r || !c.truth) return null;
     const pos = r.label === "malignant", t = c.truth === "malignant";
     return pos && t ? "TP" : !pos && !t ? "TN" : pos ? "FP" : "FN";
   }
@@ -438,6 +469,7 @@
     const t = L();
     $("count").textContent = DATA.cases.length;
     $("cases").innerHTML = DATA.cases.map((c, i) => {
+      if (c.rejected) return `<button class="case" type="button" data-i="${i}" aria-current="${i === ci}"><img src="${c.thumb}" alt=""><span><span class="id">${esc(c.id)}</span><span class="chips"><span class="chip">${t.uploaded}</span><span class="chip rej">${t.rejected}</span></span></span></button>`;
       const r = c.modes[mode] || c.modes[Object.keys(c.modes)[0]], o = outcome(c, mode);
       return `<button class="case" type="button" data-i="${i}" aria-current="${i === ci}">
         <img src="${r.images.thumb}" alt="">
@@ -457,7 +489,8 @@
         <div class="gtrack sm"><span class="zone b" style="width:${r.t_star * 100}%"></span><span class="zone m" style="left:${r.t_star * 100}%"></span><span class="tline" style="left:${r.t_star * 100}%"></span><span class="needle" data-left="${r.p_final * 100}" style="left:${reduced ? r.p_final * 100 : 0}%"></span></div>
         ${scale(r)}</div>
       <div class="ref"><span class="label">${t.ref}</span>
-        ${c.truth ? `<span class="dx ${c.truth}">${label(c.truth)}</span><div class="outcome ${o === "TP" || o === "TN" ? "ok" : "miss"}">${t.ocLine[o]}</div>` : `<div class="outcome">${t.noRef}</div>`}</div>`;
+        ${c.truth ? `<span class="dx ${c.truth}">${label(c.truth)}</span><div class="outcome ${o === "TP" || o === "TN" ? "ok" : "miss"}">${t.ocLine[o]}</div>` : `<div class="outcome">${t.noRef}</div>`}</div>
+      ${c.ood && c.ood.status === "warn" ? `<div class="oodwarn"><span><b>${t.warnTitle}</b> ${t.warnText} ${c.ood.reasons.filter((k) => k !== "unusual").map((k) => t.reasons[k]).join(" ")}</span></div>` : ""}`;
   }
   function renderStages() {
     const t = L();
@@ -520,9 +553,31 @@
         emb.querySelectorAll("span").forEach((s, i) => { const a = Math.abs(v[i]) / mx; setTimeout(() => (s.style.background = `rgba(86,180,233,${0.08 + 0.92 * a})`), reduced ? 0 : i * 6); }); }
     }));
   }
+  function distBar(o) {
+    const top = Math.max(o.reject * 1.8, o.distance * 1.08), x = (v) => Math.min(100, (v / top) * 100), t = L();
+    return `<div class="dist"><span class="label">${t.distLbl}: ${o.distance.toFixed(3)}</span>
+      <div class="gtrack"><span class="zone ok" style="width:${x(o.warn)}%"></span><span class="zone wa" style="left:${x(o.warn)}%;width:${x(o.reject) - x(o.warn)}%"></span><span class="zone re" style="left:${x(o.reject)}%"></span><span class="needle" data-left="${x(o.distance)}" style="left:${reduced ? x(o.distance) : 0}%;background:var(--amber);box-shadow:0 0 10px var(--amber)"></span></div>
+      <div class="gscale"><span>0</span><span style="left:${x(o.warn) / 2}%">${t.zOk}</span><span style="left:${(x(o.warn) + x(o.reject)) / 2}%">${t.zWarn}</span><span style="left:${(x(o.reject) + 100) / 2}%">${t.zRej}</span><span style="left:100%">${top.toFixed(2)}</span></div></div>`;
+  }
+  function renderRejected(c) {
+    const t = L(), o = c.ood;
+    $("reject").innerHTML = `<div><img src="${c.image}" alt="${esc(c.id)}"></div><div>
+      <span class="label">${esc(c.id)}</span>
+      <h2>${t.rejTitle}. <span>${t.rejTitleMark}</span></h2>
+      <p>${t.rejLead}</p>
+      ${distBar(o)}
+      <h4 class="label" style="margin:12px 0 4px">${t.rejWhy}</h4>
+      <ul>${o.reasons.map((k) => `<li>${t.reasons[k]}</li>`).join("")}</ul>
+      <p>${t.rejDo}</p></div>`;
+    requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll("#reject [data-left]").forEach((e) => (e.style.left = e.dataset.left + "%"))));
+  }
   function render() {
-    const c = cur(), r = run();
+    const c = cur();
     staticText();
+    const rej = !!c.rejected;
+    ["summary", "stages", "controls", "stage"].forEach((id) => ($(id).hidden = rej)); $("reject").hidden = !rej;
+    if (rej) { playing = false; clearTimeout(timer); renderCases(); renderRejected(c); return; }
+    const r = run();
     $("m-expert").setAttribute("aria-pressed", mode === "expert"); $("m-auto").setAttribute("aria-pressed", mode === "automatic");
     $("m-expert").disabled = !c.modes.expert; $("m-auto").disabled = !c.modes.automatic;
     if (!c.modes[mode]) mode = Object.keys(c.modes)[0];
@@ -537,7 +592,7 @@
       if (si < 7) si++;
       else {
         if (REC.mr && (REC.scope === "one" || ci === REC.lastCase)) { stopRec(); return; }
-        si = 0; ci = (ci + 1) % DATA.cases.length;
+        si = 0; do { ci = (ci + 1) % DATA.cases.length; } while (DATA.cases[ci].rejected && DATA.cases.some((x) => !x.rejected));
       }
       render(); restart();
     }, DWELL);
@@ -605,7 +660,9 @@
         const body = { name: f.name, image: await readB64(f), mask: m ? await readB64(m) : null };
         const res = await fetch("api/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         const js = await res.json(); if (!res.ok) throw new Error(js.error || res.statusText);
-        DATA.cases.unshift(js); ci = 0; si = 0; mode = js.modes.expert ? "expert" : "automatic"; playing = !reduced;
+        DATA.cases.unshift(js); ci = 0; si = 0;
+        if (js.rejected) { st.className = "status err"; st.textContent = L().upRejected; render(); return; }
+        mode = js.modes.expert ? "expert" : "automatic"; playing = !reduced;
         const rr = js.modes[mode]; st.textContent = L().upDone(f3(rr.p_final), label(rr.label)); render(); restart();
       } catch (e) { st.className = "status err"; st.textContent = L().upErr + e.message; }
       finally { $("up-run").disabled = false; }

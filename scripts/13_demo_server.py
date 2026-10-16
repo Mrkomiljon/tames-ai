@@ -12,9 +12,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1])); sys.path.insert(0, str(Path(__file__).resolve().parent))
 import cv2, numpy as np
 from tames.inference import TamesPredictor
-from demo_common import ROOT, descriptor_order, encode, render
+from tames.ood import OODGate
+from demo_common import ROOT, descriptor_order, encode, fit, render, uri
 
-PRED, ORDER, PAGE = {}, None, None
+PRED, ORDER, PAGE, GATE = {}, None, None, None
 
 
 def predictor(name):
@@ -48,14 +49,21 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, json.dumps({"error": "not found"}))
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
-            img = decode(body["image"])
+            colour = decode(body["image"], cv2.IMREAD_COLOR)
+            img = cv2.cvtColor(colour, cv2.COLOR_BGR2GRAY)
             mask = decode(body["mask"]) > 127 if body.get("mask") else None
+            ood = GATE.check(colour)
+            name_id = Path(body.get("name") or "upload").stem[:24]
+            if ood["status"] == "reject":
+                print(f"[predict] {name_id}: rejected by the OOD gate, distance {ood['distance']:.3f} > {ood['reject']:.3f}, {ood['reasons']}", flush=True)
+                thumb = cv2.resize(colour, (132, max(1, round(132 * colour.shape[0] / colour.shape[1]))), interpolation=cv2.INTER_AREA)
+                return self._send(200, json.dumps({"id": name_id, "truth": None, "rejected": True, "ood": ood, "thumb": uri(thumb, 78), "image": uri(fit(colour, 520))}))
             if mask is not None and mask.shape != img.shape:
                 mask = cv2.resize(mask.astype(np.uint8), (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST) > 0
             name = "expert" if mask is not None else "automatic"
             t = time.time(); P = predictor(name); out = P.predict(img, mask)
-            res = {"id": Path(body.get("name") or "upload").stem[:24], "truth": None, "modes": {name: encode(out, ORDER, P.desc_stats)}}
-            print(f"[predict] {res['id']}: {name} p_final {out['p_final']:.3f} ({out['label']}) in {time.time() - t:.1f}s")
+            res = {"id": name_id, "truth": None, "ood": ood, "modes": {name: encode(out, ORDER, P.desc_stats)}}
+            print(f"[predict] {res['id']}: {name} p_final {out['p_final']:.3f} ({out['label']}) in {time.time() - t:.1f}s; OOD {ood['status']} distance {ood['distance']:.3f}", flush=True)
             self._send(200, json.dumps(res))
         except Exception as e:  # report the reason to the page
             traceback.print_exc(); self._send(400, json.dumps({"error": str(e)}))
@@ -70,13 +78,14 @@ def main():
     ORDER = descriptor_order()
     built = ROOT / "demo" / "tames_walkthrough.html"
     PAGE = "<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>" + (built.read_text() if built.exists() else render({"cases": []}))
-    print("loading models…"); predictor("expert"); predictor("automatic")
+    global GATE
+    print("loading models…", flush=True); predictor("expert"); predictor("automatic"); GATE = OODGate.load()
     try:
         srv = ThreadingHTTPServer((a.host, a.port), Handler)
     except OSError:
         srv = ThreadingHTTPServer((a.host, 0), Handler)
         print(f"port {a.port} is in use; using a free port instead")
-    print(f"TAMES AI walkthrough at http://{a.host}:{srv.server_address[1]}  (Ctrl+C to stop)")
+    print(f"TAMES AI walkthrough at http://{a.host}:{srv.server_address[1]}  (Ctrl+C to stop)", flush=True)
     srv.serve_forever()
 
 
