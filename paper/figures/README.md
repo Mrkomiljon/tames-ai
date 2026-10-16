@@ -14,14 +14,14 @@ content (`bbox_inches='tight'`, pad 0.02 in), widths 85 mm (single column) or 17
 | Figure | File | Script | Inputs |
 |---|---|---|---|
 | 1 | `fig1_flow.{pdf,png}` | `fig1_flow.py` (+ `figstyle_diagram.py`) | `data/processed/splits.csv` |
-| 2 | `fig2_architecture.{pdf,png}` | `fig2_architecture.py` (+ `figstyle_diagram.py`) | none; computational graph: (a) full model as a data-flow graph with tensor shapes, (b) fuzzy front end, Eqs. (1)–(8), (c) ResNet basic block |
+| 2 | `fig2_architecture.{pdf,png}` | `fig2_architecture.py` (+ `figstyle_diagram.py`) | (a) data-flow graph with tensor shapes; (b) fuzzy front end with the real maps of test image te_0450 (raw image from `data/raw/tn3k`, SNR₀ from `data/processed/snr0.json`, α 2, β 0.5, γ 2, λ 0, bright polarity); notes in `notes/fig2_v3_NOTES.md` |
 | 3 | `fig3_samples.{pdf,png}` (170 mm) | `fig3_samples.py` | `data/raw/tn3k` images and masks, `data/processed/{splits.csv, meta_test.csv, X_test.npy, fuzzy_params.json}`, `runs/tn3k_fold0/ensemble_tames_seed0/{p_pooled_test.npy, model_order.json, results.json}`; the whole-image maps μ and F and Otsu(F) are recomputed from the raw image with the saved parameters |
 | 4 | `fig4_roc.{pdf,png}` (170 mm) | `fig4_roc.py` | pooled test predictions and `results.json` of `runs/tn3k_fold0` (a) and `runs/tn3k_automask` (b); labels from `meta_test.csv` |
 | 5 | `fig5_robustness.{pdf,png}` (170 mm) | `fig5_robustness.py` | `runs/tn3k_fold0/robustness/robustness.csv` |
 | 6 | `fig6_lowdata.{pdf,png}` (85 mm) | `fig6_lowdata.py` | `runs/lowdata_table.csv` |
 | 7 | `fig7_calibration.{pdf,png}` (170 mm) | `fig7_calibration.py` | `results.json → models.*.calibration_test.bins` (a; point area 10–120 pt² for n = 30–90); `p_pooled_test.npy` (b) |
 | 8 | `fig8_explanations.{pdf,png}` (170 mm) | `fig8_explanations.py` | `runs/tn3k_fold0/explain_tames_seed0/{shap_summary.csv, shap_stability.json}`, seed-0 weights from `results.json` (a); `cnn_tames_seed0/model.pt`, `X_test.npy`, the `GradCAM` class of `scripts/07_explain.py` (b, inference only) |
-| S1 | `figS1_layers.{pdf,png}` | `figS1_layers.py` (+ `figstyle_diagram.py`) | none; layered view of the architecture (former Figure 2), key: evaluated / defined / contribution |
+| S1 | `figS1_layers.{pdf,png}` | `figS1_layers.py` (+ `figstyle_diagram.py`) | none; layered view of the architecture (eight layers), key: evaluated / defined / contribution |
 | S1 (old numbering, see note) | `figS1_seed_roc_confusion.{pdf,png}` (170 mm) | `figS_supplement.py` | per-seed `p_test.npy`, `p_{rf,xgb,fsvm}_test.npy` and per-seed weights (a); pooled predictions and thresholds (b) |
 
 Notes.
