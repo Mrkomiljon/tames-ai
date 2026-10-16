@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1])); sys.path.insert(0,
 import cv2, numpy as np
 from tames.inference import TamesPredictor
 from tames.ood import OODGate
+from tames.dicom_io import is_dicom, read_ultrasound
 from demo_common import ROOT, descriptor_order, encode, fit, render, uri
 
 PRED, ORDER, PAGE, GATE = {}, None, None, None
@@ -49,7 +50,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, json.dumps({"error": "not found"}))
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
-            colour = decode(body["image"], cv2.IMREAD_COLOR)
+            raw = base64.b64decode(body["image"]); dicom = None
+            if is_dicom(raw):
+                rgb, dicom = read_ultrasound(raw, body.get("frame")); colour = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            else:
+                colour = decode(body["image"], cv2.IMREAD_COLOR)
             img = cv2.cvtColor(colour, cv2.COLOR_BGR2GRAY)
             mask = decode(body["mask"]) > 127 if body.get("mask") else None
             ood = GATE.check(colour)
@@ -57,12 +62,14 @@ class Handler(BaseHTTPRequestHandler):
             if ood["status"] == "reject":
                 print(f"[predict] {name_id}: rejected by the OOD gate, distance {ood['distance']:.3f} > {ood['reject']:.3f}, {ood['reasons']}", flush=True)
                 thumb = cv2.resize(colour, (132, max(1, round(132 * colour.shape[0] / colour.shape[1]))), interpolation=cv2.INTER_AREA)
-                return self._send(200, json.dumps({"id": name_id, "truth": None, "rejected": True, "ood": ood, "thumb": uri(thumb, 78), "image": uri(fit(colour, 520))}))
+                return self._send(200, json.dumps({"id": name_id, "truth": None, "rejected": True, "ood": ood, "dicom": dicom, "thumb": uri(thumb, 78), "image": uri(fit(colour, 520))}))
+            if dicom is not None:
+                print(f"[predict] {name_id}: DICOM {dicom['manufacturer']} {dicom['model']}, frame {dicom['frame'] + 1}/{dicom['frames']}, region crop {dicom['cropped_to_region']}", flush=True)
             if mask is not None and mask.shape != img.shape:
                 mask = cv2.resize(mask.astype(np.uint8), (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST) > 0
             name = "expert" if mask is not None else "automatic"
             t = time.time(); P = predictor(name); out = P.predict(img, mask)
-            res = {"id": name_id, "truth": None, "ood": ood, "modes": {name: encode(out, ORDER, P.desc_stats)}}
+            res = {"id": name_id, "truth": None, "ood": ood, "dicom": dicom, "modes": {name: encode(out, ORDER, P.desc_stats)}}
             print(f"[predict] {res['id']}: {name} p_final {out['p_final']:.3f} ({out['label']}) in {time.time() - t:.1f}s; OOD {ood['status']} distance {ood['distance']:.3f}", flush=True)
             self._send(200, json.dumps(res))
         except Exception as e:  # report the reason to the page

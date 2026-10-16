@@ -13,3 +13,7 @@ pyyaml>=6.0
 tqdm>=4.66
 joblib>=1.3
 pytest>=8.0
+pydicom>=3.0
+pylibjpeg>=2.0
+pylibjpeg-libjpeg>=2.1
+pylibjpeg-openjpeg>=2.3

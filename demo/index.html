@@ -225,7 +225,7 @@
       <div class="cases" id="cases"></div>
       <div class="upload" id="upload" hidden>
         <strong id="t-up"></strong>
-        <label for="up-img"><span id="t-up-img"></span><input id="up-img" type="file" accept="image/*"></label>
+        <label for="up-img"><span id="t-up-img"></span><input id="up-img" type="file" accept="image/*,.dcm,.dicom,application/dicom"></label>
         <label for="up-mask"><span id="t-up-mask"></span><input id="up-mask" type="file" accept="image/*"></label>
         <button class="btn primary" id="up-run" type="button"></button>
         <div class="status" id="up-status" role="status"></div>
@@ -283,9 +283,9 @@
       set: "model set", ens: "ensemble", meanW: "mean weight ω",
       zoneB: "benign zone", zoneM: "malignant zone", seeds: "short ticks: the five model sets",
       bandsB: "benign training nodules, middle half", bandsM: "malignant, middle half", thisOne: "● this nodule", logScale: "logarithmic scale", offScale: "beyond the scale", axis: "scale",
-      up: "Try your own image", upImg: "Ultrasound image (PNG or JPEG)", upMask: "Nodule outline mask (optional, white = nodule)",
+      up: "Try your own image", upImg: "Ultrasound image (DICOM, PNG or JPEG)", upMask: "Nodule outline mask (optional, white = nodule)",
       upRun: "Run TAMES AI", upNeed: "Choose an image first.", upBusy: (n) => `Running the fuzzy front end and ${n} models…`,
-      upDone: (p, l) => `Done: probability ${p} (${l}).`, upErr: "Could not run the model: ",
+      upDone: (p, l) => `Done: probability ${p} (${l}).`, dcm: (d) => ` DICOM ${d.manufacturer} ${d.model}, frame ${d.frame + 1} of ${d.frames}, cropped to the ultrasound region.`, upErr: "Could not run the model: ",
       offline: "To analyse your own image, start the local server with python scripts/13_demo_server.py and open the address it prints.",
       foot: "Research prototype trained on the public TN3K dataset; not a medical device and not for clinical use.",
       rejected: "not analysed", rejTitle: "This image does not look like a thyroid ultrasound frame", rejTitleMark: "No diagnosis given.",
@@ -369,9 +369,9 @@
       set: "to‘plam", ens: "ansambl", meanW: "o‘rtacha og‘irlik ω",
       zoneB: "xavfsiz zona", zoneM: "xavfli zona", seeds: "qisqa chiziqlar: besh model to‘plami",
       bandsB: "xavfsiz o‘quv tugunlari, o‘rta yarmi", bandsM: "xavfli, o‘rta yarmi", thisOne: "● shu tugun", logScale: "logarifmik shkala", offScale: "shkaladan tashqarida", axis: "shkala",
-      up: "O‘z tasviringizni sinang", upImg: "UTT tasviri (PNG yoki JPEG)", upMask: "Tugun konturi maskasi (ixtiyoriy, oq = tugun)",
+      up: "O‘z tasviringizni sinang", upImg: "UTT tasviri (DICOM, PNG yoki JPEG)", upMask: "Tugun konturi maskasi (ixtiyoriy, oq = tugun)",
       upRun: "TAMES AI ni ishga tushirish", upNeed: "Avval tasvirni tanlang.", upBusy: (n) => `Fuzzy ishlov va ${n} ta model ishlamoqda…`,
-      upDone: (p, l) => `Tayyor: ehtimollik ${p} (${l}).`, upErr: "Modelni ishga tushirib bo‘lmadi: ",
+      upDone: (p, l) => `Tayyor: ehtimollik ${p} (${l}).`, dcm: (d) => ` DICOM ${d.manufacturer} ${d.model}, ${d.frames} kadrdan ${d.frame + 1}-kadr, faqat UTT sohasi kesib olindi.`, upErr: "Modelni ishga tushirib bo‘lmadi: ",
       offline: "O‘z tasviringizni tahlil qilish uchun lokal serverni python scripts/13_demo_server.py bilan ishga tushiring va u ko‘rsatgan manzilni oching.",
       foot: "Ochiq TN3K to‘plamida o‘qitilgan tadqiqot prototipi; tibbiy qurilma emas va klinik amaliyot uchun mo‘ljallanmagan.",
       rejected: "tahlil qilinmadi", rejTitle: "Bu rasm qalqonsimon bez UTT tasviriga o‘xshamaydi", rejTitleMark: "Tashxis berilmaydi.",
@@ -663,7 +663,7 @@
         DATA.cases.unshift(js); ci = 0; si = 0;
         if (js.rejected) { st.className = "status err"; st.textContent = L().upRejected; render(); return; }
         mode = js.modes.expert ? "expert" : "automatic"; playing = !reduced;
-        const rr = js.modes[mode]; st.textContent = L().upDone(f3(rr.p_final), label(rr.label)); render(); restart();
+        const rr = js.modes[mode]; st.textContent = L().upDone(f3(rr.p_final), label(rr.label)) + (js.dicom ? L().dcm(js.dicom) : ""); render(); restart();
       } catch (e) { st.className = "status err"; st.textContent = L().upErr + e.message; }
       finally { $("up-run").disabled = false; }
     };
