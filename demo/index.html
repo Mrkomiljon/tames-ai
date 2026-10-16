@@ -2,12 +2,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  /* Layout: reading-room console. Case rail left, numbered stage rail on top, one stage at a time (visual | reading), decision gauge last. */
+  /* Layout: reading-room console. Header (language, outline mode) · case rail | result card, numbered step rail, one step at a time (picture | explanation). */
   :root {
     color-scheme: dark;
-    --bg: #0c0f12; --panel: #13181d; --panel-2: #192027; --line: #26303a; --line-2: #33404c;
-    --ink: #e7ebee; --muted: #95a2ae; --faint: #5f6c78;
-    --accent: #56b4e9;            /* TAMES AI, Okabe–Ito sky blue */
+    --bg: #0b0e11; --panel: #12171c; --panel-2: #182027; --panel-3: #1e2730; --line: #242e38; --line-2: #33404c;
+    --ink: #e8ecef; --ink-2: #c6ced5; --muted: #93a0ac; --faint: #5f6c78;
+    --accent: #56b4e9; --accent-ink: #06121b;
     --benign: #3cc29a; --malig: #f07b3f; --amber: #e6b84f;
     --l-dl: #56b4e9; --l-rf: #cc79a7; --l-xgb: #e6a23c; --l-fsvm: #8fd3c0;
     --font-body: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
@@ -15,65 +15,107 @@
     --r: 10px;
   }
   * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; padding-inline: 20px; padding-block: 24px 48px; }
-  .wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 20px; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; padding-inline: 20px; padding-block: 22px 44px; }
+  .wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
   .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-  .eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
-  header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 28px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 18px; }
-  header h1 { margin: 4px 0 6px; font-size: clamp(1.45rem, 2.6vw, 2.1rem); line-height: 1.15; text-wrap: balance; letter-spacing: -0.01em; }
-  header p { margin: 0; color: var(--muted); max-width: 68ch; }
+  .label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); }
+  header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 28px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand b { font-family: var(--font-mono); font-weight: 500; font-size: 0.95rem; letter-spacing: 0.08em; color: var(--accent); }
+  .brand span { color: var(--muted); font-size: 0.82rem; }
+  header h1 { margin: 6px 0 6px; font-size: clamp(1.4rem, 2.5vw, 2rem); line-height: 1.15; text-wrap: balance; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); max-width: 70ch; }
+  .switches { display: grid; gap: 8px; justify-items: end; }
   .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; padding: 3px; background: var(--panel); }
-  .seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 0.88rem; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
-  .seg button[aria-pressed="true"] { background: var(--accent); color: #06121b; font-weight: 700; }
-  button:focus-visible, .case:focus-visible, .stage-btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 20px; align-items: start; }
-  aside { display: grid; gap: 10px; }
-  .rail-title { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; }
+  .seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 0.86rem; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+  .seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .seg.lang button { font-family: var(--font-mono); font-size: 0.78rem; padding: 5px 12px; }
+  button:focus-visible, .case:focus-visible, .stage-btn:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .layout { display: grid; grid-template-columns: 252px minmax(0, 1fr); gap: 18px; align-items: start; }
+  aside { display: grid; gap: 10px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  .rail-title { display: flex; justify-content: space-between; align-items: baseline; }
   .cases { display: grid; gap: 8px; }
-  .case { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: inherit; text-align: left; font: inherit; cursor: pointer; }
+  .case { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); color: inherit; text-align: left; font: inherit; cursor: pointer; transition: border-color .15s, background .15s; }
+  .case:hover { border-color: var(--line-2); }
   .case[aria-current="true"] { border-color: var(--accent); background: var(--panel-2); }
-  .case img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; background: #000; }
-  .case .id { font-family: var(--font-mono); font-size: 0.82rem; }
+  .case img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; background: #000; }
+  .case .id { font-family: var(--font-mono); font-size: 0.82rem; display: block; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-  .chip { font-family: var(--font-mono); font-size: 0.68rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); }
+  .chip { font-family: var(--font-mono); font-size: 0.66rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); white-space: nowrap; }
   .chip.benign { color: var(--benign); border-color: color-mix(in srgb, var(--benign) 50%, transparent); }
   .chip.malignant { color: var(--malig); border-color: color-mix(in srgb, var(--malig) 50%, transparent); }
-  .chip.ok { color: var(--ink); border-color: var(--line-2); }
+  .chip.ok { color: var(--ink); }
   .chip.miss { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 55%, transparent); }
   .upload { border: 1px dashed var(--line-2); border-radius: var(--r); padding: 12px; background: var(--panel); display: grid; gap: 8px; font-size: 0.85rem; }
   .upload label { display: grid; gap: 4px; color: var(--muted); }
-  .upload input { font: inherit; font-size: 0.8rem; color: var(--muted); max-width: 100%; }
-  .btn { border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font: inherit; font-size: 0.86rem; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
-  .btn.primary { background: var(--accent); color: #06121b; border-color: var(--accent); font-weight: 700; }
+  .upload input { font: inherit; font-size: 0.78rem; color: var(--muted); max-width: 100%; }
+  .btn { border: 1px solid var(--line-2); background: var(--panel-2); color: var(--ink); font: inherit; font-size: 0.86rem; padding: 7px 13px; border-radius: 8px; cursor: pointer; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
   .btn:disabled { opacity: 0.5; cursor: progress; }
   .note { color: var(--faint); font-size: 0.8rem; margin: 0; }
   main { display: grid; gap: 14px; min-width: 0; }
-  .casebar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: baseline; }
-  .casebar h2 { margin: 0; font-size: 1.15rem; font-family: var(--font-mono); font-weight: 500; }
-  .casebar .meta { color: var(--muted); font-size: 0.86rem; }
-  .stages { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; position: relative; }
-  .stage-btn { border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 8px; padding: 8px 6px 7px; text-align: left; font: inherit; cursor: pointer; min-width: 0; position: relative; overflow: hidden; }
-  .stage-btn .n { font-family: var(--font-mono); font-size: 0.7rem; color: var(--faint); display: block; }
+  /* result card */
+  .summary { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  .summary .head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin-bottom: 8px; }
+  .summary h2 { margin: 0; font-family: var(--font-mono); font-weight: 500; font-size: 1.05rem; }
+  .vrow { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 10px; }
+  .pill { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; font-size: 0.88rem; }
+  .pill.benign { background: color-mix(in srgb, var(--benign) 18%, transparent); color: var(--benign); border: 1px solid var(--benign); }
+  .pill.malignant { background: color-mix(in srgb, var(--malig) 18%, transparent); color: var(--malig); border: 1px solid var(--malig); }
+  .pval { font-family: var(--font-mono); font-size: 1.5rem; line-height: 1; }
+  .pval small { font-size: 0.75rem; color: var(--muted); margin-left: 6px; }
+  .gtrack { position: relative; border-radius: 7px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--line); }
+  .gtrack.sm { height: 22px; } .gtrack.lg { height: 46px; }
+  .zone { position: absolute; top: 0; bottom: 0; }
+  .zone.b { left: 0; background: color-mix(in srgb, var(--benign) 24%, transparent); }
+  .zone.m { right: 0; background: color-mix(in srgb, var(--malig) 20%, transparent); }
+  .tline { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; }
+  .needle { position: absolute; top: 3px; bottom: 3px; width: 4px; margin-left: -2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: left 1200ms cubic-bezier(.2,.8,.2,1); }
+  .stick { position: absolute; bottom: 4px; width: 2px; height: 12px; margin-left: -1px; background: var(--accent); opacity: 0.85; transition: left 900ms; }
+  .gscale { position: relative; height: 1.2em; font-family: var(--font-mono); font-size: 0.7rem; color: var(--faint); margin-top: 4px; }
+  .gscale span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .gscale span:first-child { transform: none; } .gscale span:last-child { transform: translateX(-100%); }
+  .gscale .t { color: var(--ink-2); }
+  .ref { display: grid; gap: 6px; align-content: start; border-left: 1px solid var(--line); padding-left: 20px; }
+  .ref .dx { font-size: 1.1rem; font-weight: 700; }
+  .ref .dx.benign { color: var(--benign); } .ref .dx.malignant { color: var(--malig); }
+  .outcome { font-size: 0.9rem; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); }
+  .outcome.ok::before { content: "✓ "; color: var(--benign); font-weight: 700; }
+  .outcome.miss::before { content: "! "; color: var(--amber); font-weight: 700; }
+  /* steps */
+  .stages { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+  .stage-btn { border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 8px; padding: 7px 8px 8px; text-align: left; font: inherit; cursor: pointer; min-width: 0; position: relative; overflow: hidden; }
+  .stage-btn .n { font-family: var(--font-mono); font-size: 0.68rem; color: var(--faint); display: block; }
   .stage-btn .t { font-size: 0.8rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stage-btn.done { color: var(--ink-2); }
+  .stage-btn.done .n { color: var(--muted); }
   .stage-btn[aria-current="step"] { border-color: var(--accent); color: var(--ink); background: var(--panel-2); }
   .stage-btn[aria-current="step"] .n { color: var(--accent); }
-  .stage-btn.done { color: var(--ink); }
   .stage-btn .bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--accent); }
   .stage-btn[aria-current="step"].playing .bar { animation: fill var(--dwell) linear forwards; }
   @keyframes fill { to { width: 100%; } }
   .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .controls .spacer { flex: 1; }
-  .stage { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-height: 420px; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-height: 440px; }
   .visual { display: grid; gap: 10px; align-content: start; min-width: 0; }
   .reading { display: grid; gap: 12px; align-content: start; min-width: 0; }
-  .reading h3 { margin: 0; font-size: 1.25rem; line-height: 1.2; text-wrap: balance; }
-  .reading .eq { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); }
-  .reading p { margin: 0; color: #c9d1d8; max-width: 60ch; }
-  .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; font-size: 0.88rem; }
-  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .stepno { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .stepno .eq { font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent); }
+  .reading h3 { margin: 0; font-size: 1.28rem; line-height: 1.25; text-wrap: balance; }
+  .block h4 { margin: 0 0 3px; font-family: var(--font-mono); font-weight: 500; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .block p { margin: 0; color: var(--ink-2); max-width: 62ch; }
+  .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 16px; font-size: 0.88rem; margin: 0; padding: 10px 12px; background: var(--panel-2); border-radius: 8px; border: 1px solid var(--line); }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .callout { font-size: 0.86rem; color: var(--ink-2); border-left: 2px solid var(--amber); padding: 2px 0 2px 10px; margin: 0; }
+  details { border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
+  details summary { cursor: pointer; padding: 8px 12px; font-size: 0.84rem; color: var(--muted); list-style: none; }
+  details summary::before { content: "+ "; font-family: var(--font-mono); color: var(--accent); }
+  details[open] summary::before { content: "− "; }
+  details p { margin: 0; padding: 0 12px 10px; font-size: 0.84rem; color: var(--ink-2); }
   .tiles { display: grid; gap: 10px; }
   .tiles.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tiles.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   figure.tile { margin: 0; display: grid; gap: 6px; min-width: 0; }
   figure.tile figcaption { font-size: 0.78rem; color: var(--muted); }
   .sweep { position: relative; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid var(--line); }
@@ -84,13 +126,13 @@
   @keyframes reveal { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
   @keyframes scan { from { top: 0; opacity: 1; } 92% { opacity: 1; } to { top: 100%; opacity: 0; } }
   .desc { display: grid; gap: 7px; }
-  .drow { display: grid; grid-template-columns: 9.5em minmax(0, 1fr) 4.4em; gap: 10px; align-items: center; font-size: 0.82rem; }
-  .drow .name { color: #c9d1d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drow { display: grid; grid-template-columns: 10.5em minmax(0, 1fr) 4.2em; gap: 10px; align-items: center; font-size: 0.82rem; }
+  .drow .name { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .drow .val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
   .track { position: relative; height: 22px; border-radius: 4px; background: var(--panel-2); }
-  .band { position: absolute; height: 6px; border-radius: 3px; opacity: 0.75; }
+  .band { position: absolute; height: 6px; border-radius: 3px; opacity: 0.8; }
   .band.b { top: 3px; background: var(--benign); } .band.m { bottom: 3px; background: var(--malig); }
-  .med { position: absolute; width: 2px; height: 10px; background: #fff; opacity: 0.55; }
+  .med { position: absolute; width: 2px; height: 10px; margin-left: -1px; background: #fff; opacity: 0.5; }
   .med.b { top: 1px; } .med.m { bottom: 1px; }
   .dot { position: absolute; top: 50%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: #fff; border: 2px solid var(--bg); box-shadow: 0 0 0 1px #fff; transition: left 900ms cubic-bezier(.3,.7,.2,1); }
   .dot.out::after { content: attr(data-dir); position: absolute; top: -18px; left: -2px; color: var(--amber); font-size: 0.75rem; }
@@ -98,42 +140,27 @@
   .sw { display: inline-block; width: 18px; height: 6px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
   .emb { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 2px; }
   .emb span { aspect-ratio: 1; border-radius: 2px; background: var(--panel-2); transition: background 600ms; }
-  table.learn { width: 100%; border-collapse: separate; border-spacing: 0 5px; font-size: 0.82rem; }
-  table.learn th { text-align: left; font-weight: 400; color: var(--muted); font-size: 0.76rem; padding: 0 6px; }
+  .tablewrap { overflow-x: auto; }
+  table.learn { width: 100%; min-width: 460px; border-collapse: separate; border-spacing: 0 5px; font-size: 0.82rem; }
+  table.learn th { text-align: left; font-weight: 400; color: var(--muted); font-size: 0.74rem; padding: 0 6px; vertical-align: bottom; }
   table.learn td { padding: 0 6px; vertical-align: middle; }
+  table.learn td.set { font-family: var(--font-mono); color: var(--muted); white-space: nowrap; }
   .mini { position: relative; height: 18px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
   .mini .f { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 4px; transition: width 900ms cubic-bezier(.3,.7,.2,1); }
-  .mini .tk { position: absolute; top: 0; bottom: 0; width: 1px; background: #fff; opacity: 0.6; }
+  .mini .tk { position: absolute; top: 0; bottom: 0; width: 1px; background: #fff; opacity: 0.7; }
   .mini .lbl { position: absolute; right: 5px; top: 0; font-family: var(--font-mono); font-size: 0.72rem; line-height: 18px; color: var(--ink); text-shadow: 0 0 3px #000; }
-  .w { font-family: var(--font-mono); font-size: 0.68rem; color: var(--faint); }
-  .gauge { display: grid; gap: 10px; }
-  .gtrack { position: relative; height: 46px; border-radius: 8px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--line); }
-  .zone { position: absolute; top: 0; bottom: 0; }
-  .zone.b { left: 0; background: color-mix(in srgb, var(--benign) 22%, transparent); }
-  .zone.m { right: 0; background: color-mix(in srgb, var(--malig) 20%, transparent); }
-  .tline { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; }
-  .stick { position: absolute; bottom: 4px; width: 2px; height: 12px; background: var(--accent); opacity: 0.8; transition: left 900ms; }
-  .needle { position: absolute; top: 4px; width: 4px; height: 26px; margin-left: -2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: left 1200ms cubic-bezier(.2,.8,.2,1); }
-  .gscale { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); }
-  .verdict { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
-  .pill { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 16px; border-radius: 999px; font-size: 0.95rem; }
-  .pill.benign { background: color-mix(in srgb, var(--benign) 22%, transparent); color: var(--benign); border: 1px solid var(--benign); }
-  .pill.malignant { background: color-mix(in srgb, var(--malig) 22%, transparent); color: var(--malig); border: 1px solid var(--malig); }
-  .big { font-family: var(--font-mono); font-size: 2.4rem; line-height: 1; }
-  .truth { font-size: 0.9rem; color: var(--muted); }
-  .truth strong { color: var(--ink); }
+  .w { font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint); }
   .status { font-size: 0.82rem; color: var(--muted); min-height: 1.2em; }
   .status.err { color: var(--amber); }
-  footer { color: var(--faint); font-size: 0.8rem; border-top: 1px solid var(--line); padding-top: 14px; }
+  footer { color: var(--faint); font-size: 0.8rem; border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
   footer a { color: var(--muted); }
-  @media (max-width: 980px) {
-    .layout { grid-template-columns: 1fr; }
-    .cases { grid-auto-flow: column; grid-auto-columns: minmax(210px, 1fr); overflow-x: auto; padding-bottom: 4px; }
-    .stage { grid-template-columns: 1fr; }
-    .stages { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    header { grid-template-columns: 1fr; }
+  @media (max-width: 1040px) {
+    .layout { grid-template-columns: 1fr; } aside { position: static; }
+    .cases { grid-auto-flow: column; grid-auto-columns: minmax(214px, 1fr); overflow-x: auto; padding-bottom: 4px; }
+    .stage { grid-template-columns: 1fr; } .stages { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    header { grid-template-columns: 1fr; } .switches { justify-items: start; }
   }
-  @media (max-width: 520px) { .tiles.three { grid-template-columns: repeat(2, minmax(0, 1fr)); } .drow { grid-template-columns: 7.5em minmax(0, 1fr) 3.8em; } }
+  @media (max-width: 640px) { .summary { grid-template-columns: 1fr; } .ref { border-left: 0; border-top: 1px solid var(--line); padding: 12px 0 0; } .drow { grid-template-columns: 7.8em minmax(0, 1fr) 3.8em; } }
   @media (prefers-reduced-motion: reduce) {
     .sweep.anim img, .sweep.anim::after, .stage-btn .bar { animation: none !important; }
     .dot, .mini .f, .needle, .stick, .emb span { transition: none !important; }
@@ -143,156 +170,318 @@
 <div class="wrap">
   <header>
     <div>
-      <div class="eyebrow">TAMES AI · thyroid ultrasound · TN3K test set</div>
-      <h1>From a B-mode image to a malignancy decision</h1>
-      <p>Each test image passes through the fuzzy front end, the ResNet-18 backbone, four learners and the adaptive ensemble, five times over (one model set per training seed). Every picture and number on this page is the trained models' own output.</p>
+      <div class="brand"><b>TAMES AI</b><span id="t-sub"></span></div>
+      <h1 id="t-h1"></h1>
+      <p id="t-lead"></p>
     </div>
-    <div class="seg" role="group" aria-label="Delineation">
-      <button id="m-expert" type="button" aria-pressed="true">Expert delineation</button>
-      <button id="m-auto" type="button" aria-pressed="false">Automatic delineation</button>
+    <div class="switches">
+      <div class="seg lang" role="group" aria-label="Language / Til">
+        <button id="l-en" type="button" aria-pressed="true">EN</button>
+        <button id="l-uz" type="button" aria-pressed="false">UZ</button>
+      </div>
+      <div class="seg" role="group" id="mode-group">
+        <button id="m-expert" type="button" aria-pressed="true"></button>
+        <button id="m-auto" type="button" aria-pressed="false"></button>
+      </div>
     </div>
   </header>
 
   <div class="layout">
     <aside>
-      <div class="rail-title"><span>Test images</span><span class="mono" id="count"></span></div>
+      <div class="rail-title"><span class="label" id="t-cases"></span><span class="mono label" id="count"></span></div>
       <div class="cases" id="cases"></div>
       <div class="upload" id="upload" hidden>
-        <strong>Try your own image</strong>
-        <label for="up-img">B-mode image (PNG or JPEG)<input id="up-img" type="file" accept="image/*"></label>
-        <label for="up-mask">Delineation mask (optional; white = nodule)<input id="up-mask" type="file" accept="image/*"></label>
-        <button class="btn primary" id="up-run" type="button">Run TAMES AI</button>
+        <strong id="t-up"></strong>
+        <label for="up-img"><span id="t-up-img"></span><input id="up-img" type="file" accept="image/*"></label>
+        <label for="up-mask"><span id="t-up-mask"></span><input id="up-mask" type="file" accept="image/*"></label>
+        <button class="btn primary" id="up-run" type="button"></button>
         <div class="status" id="up-status" role="status"></div>
       </div>
-      <p class="note" id="offline-note">To run your own image, start the local server: <span class="mono">python scripts/13_demo_server.py</span>, then open the address it prints.</p>
+      <p class="note" id="offline-note"></p>
     </aside>
 
     <main>
-      <div class="casebar"><h2 id="case-id"></h2><span class="meta" id="case-meta"></span></div>
-      <nav class="stages" id="stages" aria-label="Pipeline stages"></nav>
+      <section class="summary" id="summary" aria-live="polite"></section>
+      <nav class="stages" id="stages" aria-label="Pipeline"></nav>
       <div class="controls">
-        <button class="btn" id="prev" type="button" aria-label="Previous stage">◀ Prev</button>
-        <button class="btn primary" id="play" type="button">Pause</button>
-        <button class="btn" id="next" type="button" aria-label="Next stage">Next ▶</button>
+        <button class="btn" id="prev" type="button"></button>
+        <button class="btn primary" id="play" type="button"></button>
+        <button class="btn" id="next" type="button"></button>
         <span class="spacer"></span>
-        <span class="note" id="hint">Click any stage to jump; the walkthrough plays automatically.</span>
+        <span class="note" id="hint"></span>
       </div>
-      <section class="stage" id="stage" aria-live="polite"></section>
+      <section class="stage" id="stage"></section>
     </main>
   </div>
 
-  <footer>Models: commit and run listed in <span class="mono">runs/tn3k_fold0</span> (expert) and <span class="mono">runs/tn3k_automask</span> (automatic) of <a href="https://github.com/Mrkomiljon/tames-ai" target="_blank" rel="noopener">github.com/Mrkomiljon/tames-ai</a>. Research prototype, not a medical device.</footer>
+  <footer><span id="t-foot"></span><a href="https://github.com/Mrkomiljon/tames-ai" target="_blank" rel="noopener">github.com/Mrkomiljon/tames-ai</a></footer>
 </div>
 
 <script id="tames-data" type="application/json">__TAMES_DATA__</script>
 <script>
 (() => {
   const DATA = JSON.parse(document.getElementById("tames-data").textContent);
-  const STAGES = [
-    { t: "Input", eq: "B-mode frame" },
-    { t: "Membership μ", eq: "Eqs. (1)–(4)" },
-    { t: "Fuzzy map F", eq: "Eqs. (5)–(8)" },
-    { t: "Delineation, crop", eq: "1.5 × box, 224 px" },
-    { t: "Descriptors", eq: "11 values, Eq. (10)" },
-    { t: "Backbone", eq: "Eq. (9), Grad-CAM" },
-    { t: "Four learners", eq: "Eqs. (12)–(14)" },
-    { t: "Decision", eq: "Eqs. (15)–(16)" },
-  ];
-  const LEARN = [["dl", "DL head"], ["rf", "Random forest"], ["xgb", "XGBoost"], ["fsvm", "Fuzzy SVM"]];
-  const DWELL = 4200;
+  const f3 = (v) => v.toFixed(3), f2 = (v) => v.toFixed(2);
+  const fmt = (v) => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(3));
+
+  /* ---------- text, English and Uzbek ---------- */
+  const T = {
+    en: {
+      sub: "Thyroid nodule ultrasound · TN3K test set · research prototype",
+      h1: "How TAMES AI reaches a decision",
+      lead: "Pick a test image and follow it through eight steps, from the raw ultrasound frame to the benign or malignant call. Every picture and number is produced by the trained models.",
+      modeGroup: "Nodule outline", expert: "Expert outline", automatic: "Automatic outline",
+      cases: "Test images", benign: "benign", malignant: "malignant", uploaded: "uploaded",
+      oc: { TP: "true positive", TN: "true negative", FP: "false positive", FN: "false negative" },
+      ocLine: { TP: "Correct: malignant nodule detected.", TN: "Correct: benign nodule cleared.", FP: "False positive: benign nodule flagged for review.", FN: "False negative: malignant nodule missed." },
+      noRef: "No reference diagnosis for an uploaded image.",
+      pred: "Model prediction", prob: "probability", thr: "threshold", ref: "Reference diagnosis", setting: "outline",
+      prev: "◀ Previous", next: "Next ▶", play: "Play", pause: "Pause",
+      hint: "Click a step to jump · ← → keys · space to pause",
+      step: (i, n) => `Step ${i} of ${n}`,
+      what: "What happens", see: "What you see", tech: "Technical detail",
+      stages: ["Input", "Pixel uncertainty", "Fuzzy map", "Region of interest", "Features", "Neural network", "Model vote", "Decision"],
+      learn: { dl: "DL head", rf: "Random forest", xgb: "XGBoost", fsvm: "Fuzzy SVM" },
+      set: "model set", ens: "ensemble", meanW: "mean weight ω",
+      zoneB: "benign zone", zoneM: "malignant zone", seeds: "short ticks: the five model sets",
+      bandsB: "benign training nodules, middle half", bandsM: "malignant, middle half", thisOne: "● this nodule",
+      up: "Try your own image", upImg: "Ultrasound image (PNG or JPEG)", upMask: "Nodule outline mask (optional, white = nodule)",
+      upRun: "Run TAMES AI", upNeed: "Choose an image first.", upBusy: (n) => `Running the fuzzy front end and ${n} models…`,
+      upDone: (p, l) => `Done: probability ${p} (${l}).`, upErr: "Could not run the model: ",
+      offline: "To analyse your own image, start the local server with python scripts/13_demo_server.py and open the address it prints.",
+      foot: "Research prototype trained on the public TN3K dataset; not a medical device and not for clinical use.",
+      desc: {
+        area_frac: ["area fraction", "nodule area / image area"], taller_than_wide: ["taller-than-wide", "height / width of the nodule (TI-RADS shape)"],
+        eccentricity: ["eccentricity", "how elongated the fitted ellipse is"], solidity: ["solidity", "area / convex-hull area; low = lobulated margin"],
+        irregularity: ["margin irregularity", "perimeter² / (4π·area) − 1; 0 for a circle"], echo_ratio: ["echo ratio", "brightness inside / surrounding ring; low = hypoechoic"],
+        echo_mean: ["mean echogenicity", "mean normalized brightness inside"], echo_std: ["echo SD", "heterogeneity inside"],
+        echo_entropy: ["texture entropy", "texture entropy inside"], bright_frac: ["bright-spot fraction", "echogenic foci (microcalcification-like)"],
+        n_components: ["component count", "connected parts of the outline"],
+      },
+      S: (r, c) => [
+        { eq: "B-mode frame, Eq. (3)", title: "The ultrasound image",
+          what: `The model receives one B-mode ultrasound frame of a thyroid nodule${r.mode === "expert" ? ", together with the radiologist's outline of the nodule" : ". No outline is given; the model will locate the region itself"}. First it measures how noisy the image is.`,
+          see: "The original image as stored in the TN3K dataset.",
+          kv: [["image size", `${r.size[0]} × ${r.size[1]} px`], ["signal-to-noise ratio", f2(r.snr)], ["image quality q", f3(r.q)]],
+          tech: "q = SNR / (SNR + SNR₀), Eq. (3), with SNR₀ = 59.2 the median training SNR; the noise level comes from Immerkær's Laplacian estimate. q later scales the image embedding (Q_img)." },
+        { eq: "Eqs. (1)–(4)", title: "Pixel-level uncertainty: membership μ",
+          what: "Every pixel gets a value between 0 and 1 that says how typical it is of its neighbourhood: high in uniform tissue, low on edges and speckle noise. This is how the model represents uncertainty at pixel level.",
+          see: "Left: the normalized image. Right: membership μ, bright means high membership.",
+          kv: [["α, β (chosen on validation)", "2, 0.5"], ["neighbourhood", "7 × 7 px"], ["upper bound q", f3(r.q)]],
+          tech: "μ(p) = q · exp(−(x̃ − c)² / (2σ² + ε)) · (1 + αT)(1 + βK) / ((1 + α)(1 + β)), Eq. (4); c, σ local mean and SD, T local entropy, K Michelson contrast over the 7 × 7 window. Display range 1–99th percentile." },
+        { eq: "Eqs. (5)–(8)", title: "Fuzzy morphology: the map F",
+          what: "The membership map is cleaned with fuzzy erosion and dilation whose strength follows local reliability, so speckle is suppressed and nodule borders are kept. The result F becomes the second image channel of the neural network.",
+          see: "Left: the map F. Right: pixels above Otsu's threshold of F (blue) with the nodule outline (white).",
+          kv: [["γ, λ (chosen on validation)", "2, 0 (closing)"], ["structuring radius", "1–5 px"], ["Dice of Otsu(F), test set", "0.20"]],
+          tech: "Radius r(p) and reliability w(p), Eqs. (5)–(6); weighted erosion and dilation, Eq. (7); F = λO + (1 − λ)C, Eq. (8). F is a texture channel, not a segmentation: its Otsu foreground matches expert outlines only modestly." },
+        { eq: "1.5 × box, 224 × 224", title: r.mode === "expert" ? "The outline decides where to look" : "The fuzzy map decides where to look",
+          what: "A square region 1.5 times the size of the outlined nodule is cut out and resized to 224 × 224 pixels. The network reads two channels: the image x̃ and the fuzzy map F.",
+          see: "Left: outline and crop box on the full image. Right: the two input channels.",
+          kv: [["crop rows", `${r.crop_box[0]}–${r.crop_box[1]}`], ["crop columns", `${r.crop_box[2]}–${r.crop_box[3]}`], ["network input", "2 × 224 × 224"]],
+          callout: r.mode === "automatic" ? "Without an expert outline the region found from F usually includes surrounding tissue, so the crop is wide and the shape features in the next step move far from typical values." : null,
+          tech: "Square crop centred on the bounding box of the outline, side 1.5 × the larger box side, resized with area interpolation." },
+        { eq: "11 features, Eq. (10)", title: "Eleven measurable features of the nodule",
+          what: "From the outlined region the model measures shape, margin, echogenicity and bright spots, the computable counterparts of TI-RADS features. Each row shows where this nodule sits compared with the benign and malignant nodules of the training set.",
+          see: "Green band: middle half of benign training nodules. Orange band: malignant. White dot: this nodule; ◂ ▸ means off the scale.",
+          kv: [],
+          callout: "The bands overlap a lot: on their own these features reach AUC 0.68. Most of the decision comes from the image itself (85 % of the attribution).",
+          tech: "Rows are ordered by mean |SHAP| in the ensemble. Before fusion the values are median-imputed and z-scored with training statistics; Q_struct is the share of observed values, Eq. (10)." },
+        { eq: "Eq. (9), Grad-CAM", title: "The neural network compresses the crop into 128 numbers",
+          what: "An ImageNet-pretrained ResNet-18 reads both channels and summarizes the crop as 128 numbers, the image embedding. Grad-CAM shows which part of the crop drove the network's evidence for malignancy.",
+          see: "Left: Grad-CAM overlay, brighter means more influence. Right: the 128 embedding values of model set 1, brighter means larger.",
+          kv: [["image embedding", `128 numbers × Q_img = ${f3(r.q)}`], ["combined vector z", "128 + 11 + 2 = 141"]],
+          tech: "h_img = f_θ([x̃, F]), Eq. (9); z = [Q_img·h_img ; Q_struct·d̃ ; Q_img, Q_struct], Eq. (11). Grad-CAM on the last residual block, normalized per image; a faint, diffuse map means weak localized evidence." },
+        { eq: "Eqs. (12)–(14)", title: "Four models vote, five times over",
+          what: "Four different classifiers read the same 141 numbers and each gives a probability of malignancy. Their votes are weighted by how well each one did on validation images. The whole set was trained five times with different random seeds; each row is one of these five model sets.",
+          see: "Bars: probability from each model. ω: its weight. White tick: the decision threshold t*.",
+          kv: [["ensemble, per model set", r.per_seed.map((s) => f3(s.ensemble)).join(" / ")], ["average of the five", f3(r.p_final)]],
+          tech: "p_ens = Σ ω_k p_k with ω_k ∝ exp(−L_k^val / τ), τ = 0.05, Eq. (14). DL head g_φ (141 → 64 → 1), random forest (500 trees), XGBoost, fuzzy SVM with sample membership s_n, Eqs. (12)–(13)." },
+        { eq: "Eqs. (15)–(16)", title: r.p_final >= r.t_star ? `Probability ${f2(r.p_final)} is above the threshold, so the nodule is flagged malignant` : `Probability ${f2(r.p_final)} is below the threshold, so the nodule is called benign`,
+          what: "The final probability is the average over the five model sets. The threshold t* was fixed on validation images so that at least 95 % of malignant nodules are caught. That makes it low, so some benign nodules with probabilities around 0.15–0.25 are flagged for review.",
+          see: "Green zone: benign call. Orange zone: malignant call. White line: threshold t*. Blue needle: final probability; short ticks: the five model sets.",
+          kv: [["final probability", f3(r.p_final)], ["threshold t*", f3(r.t_star)], ["outline", r.mode === "expert" ? "expert" : "automatic"]],
+          tech: "p_final = σ(logit p_ens + Δ_reg), Eq. (16), with Δ_reg = 0 on TN3K, Eq. (15). On the test set at t*: sensitivity 94.9 %, specificity 32.3 %; AUC 0.815 with expert outlines and 0.823 with automatic ones." },
+      ],
+    },
+    uz: {
+      sub: "Qalqonsimon bez tuguni UTT · TN3K test to‘plami · tadqiqot prototipi",
+      h1: "TAMES AI qarorga qanday keladi",
+      lead: "Test tasvirini tanlang va uni sakkiz bosqich bo‘ylab kuzating: xom UTT tasviridan xavfsiz yoki xavfli degan xulosagacha. Barcha tasvir va raqamlar o‘qitilgan modellar tomonidan hosil qilingan.",
+      modeGroup: "Tugun konturi", expert: "Radiolog konturi", automatic: "Avtomatik kontur",
+      cases: "Test tasvirlari", benign: "xavfsiz", malignant: "xavfli", uploaded: "yuklangan",
+      oc: { TP: "to‘g‘ri musbat", TN: "to‘g‘ri manfiy", FP: "soxta musbat", FN: "soxta manfiy" },
+      ocLine: { TP: "To‘g‘ri: xavfli tugun aniqlandi.", TN: "To‘g‘ri: xavfsiz tugun tasdiqlandi.", FP: "Soxta musbat: xavfsiz tugun qo‘shimcha tekshiruvga yuborildi.", FN: "Soxta manfiy: xavfli tugun o‘tkazib yuborildi." },
+      noRef: "Yuklangan tasvir uchun haqiqiy tashxis mavjud emas.",
+      pred: "Model xulosasi", prob: "ehtimollik", thr: "chegara", ref: "Haqiqiy tashxis", setting: "kontur",
+      prev: "◀ Oldingi", next: "Keyingi ▶", play: "Ijro etish", pause: "To‘xtatish",
+      hint: "Bosqichni bosing · ← → tugmalari · probel bilan to‘xtatish",
+      step: (i, n) => `${n} bosqichdan ${i}-bosqich`,
+      what: "Nima sodir bo‘ladi", see: "Rasmda nima ko‘rinadi", tech: "Texnik tafsilot",
+      stages: ["Kirish", "Piksel noaniqligi", "Fuzzy xarita", "Tugun sohasi", "Belgilar", "Neyron tarmoq", "Modellar ovozi", "Xulosa"],
+      learn: { dl: "DL bosh qismi", rf: "Tasodifiy o‘rmon", xgb: "XGBoost", fsvm: "Fuzzy SVM" },
+      set: "to‘plam", ens: "ansambl", meanW: "o‘rtacha og‘irlik ω",
+      zoneB: "xavfsiz zona", zoneM: "xavfli zona", seeds: "qisqa chiziqlar: besh model to‘plami",
+      bandsB: "xavfsiz o‘quv tugunlari, o‘rta yarmi", bandsM: "xavfli, o‘rta yarmi", thisOne: "● shu tugun",
+      up: "O‘z tasviringizni sinang", upImg: "UTT tasviri (PNG yoki JPEG)", upMask: "Tugun konturi maskasi (ixtiyoriy, oq = tugun)",
+      upRun: "TAMES AI ni ishga tushirish", upNeed: "Avval tasvirni tanlang.", upBusy: (n) => `Fuzzy ishlov va ${n} ta model ishlamoqda…`,
+      upDone: (p, l) => `Tayyor: ehtimollik ${p} (${l}).`, upErr: "Modelni ishga tushirib bo‘lmadi: ",
+      offline: "O‘z tasviringizni tahlil qilish uchun lokal serverni python scripts/13_demo_server.py bilan ishga tushiring va u ko‘rsatgan manzilni oching.",
+      foot: "Ochiq TN3K to‘plamida o‘qitilgan tadqiqot prototipi; tibbiy qurilma emas va klinik amaliyot uchun mo‘ljallanmagan.",
+      desc: {
+        area_frac: ["maydon ulushi", "tugun maydoni / tasvir maydoni"], taller_than_wide: ["bo‘yi enidan katta", "tugun balandligi / kengligi (TI-RADS shakli)"],
+        eccentricity: ["cho‘ziqlik", "mos ellips qanchalik cho‘zilgani"], solidity: ["yaxlitlik", "maydon / qavariq qobiq maydoni; past = bo‘lakli chet"],
+        irregularity: ["chet notekisligi", "perimetr² / (4π·maydon) − 1; doira uchun 0"], echo_ratio: ["exogenlik nisbati", "ichki yorqinlik / atrof halqa; past = gipoexogen"],
+        echo_mean: ["o‘rtacha exogenlik", "ichki o‘rtacha yorqinlik"], echo_std: ["exogenlik SD", "ichki geterogenlik"],
+        echo_entropy: ["tekstura entropiyasi", "ichki tekstura entropiyasi"], bright_frac: ["yorqin nuqtalar ulushi", "exogen o‘choqlar (mikrokalsinatga o‘xshash)"],
+        n_components: ["qismlar soni", "konturning bog‘langan qismlari"],
+      },
+      S: (r, c) => [
+        { eq: "B-rejim, (3)-tenglama", title: "Ultratovush tasviri",
+          what: `Model qalqonsimon bez tugunining bitta B-rejimdagi UTT tasvirini oladi${r.mode === "expert" ? ", u bilan birga radiolog chizgan tugun konturini ham" : ". Kontur berilmaydi; tugun sohasini model o‘zi topadi"}. Avval tasvirdagi shovqin darajasini o‘lchaydi.`,
+          see: "TN3K to‘plamida saqlangan asl tasvir.",
+          kv: [["tasvir o‘lchami", `${r.size[0]} × ${r.size[1]} piksel`], ["signal/shovqin nisbati", f2(r.snr)], ["tasvir sifati q", f3(r.q)]],
+          tech: "q = SNR / (SNR + SNR₀), (3)-tenglama; SNR₀ = 59.2 — o‘quv tasvirlarining median SNR qiymati; shovqin Immerkær Laplas usulida baholanadi. Keyinchalik q tasvir embeddingini masshtablaydi (Q_img)." },
+        { eq: "(1)–(4)-tenglamalar", title: "Piksel darajasidagi noaniqlik: a’zolik μ",
+          what: "Har bir pikselga 0 dan 1 gacha qiymat beriladi: u pikselning atrofidagi to‘qimaga qanchalik mos ekanini bildiradi — bir xil to‘qimada yuqori, chegaralarda va dog‘simon shovqinda past. Model noaniqlikni piksel darajasida shunday ifodalaydi.",
+          see: "Chapda: normallangan tasvir. O‘ngda: a’zolik μ, yorqin joy — yuqori a’zolik.",
+          kv: [["α, β (validatsiyada tanlangan)", "2, 0.5"], ["atrof oynasi", "7 × 7 piksel"], ["yuqori chegara q", f3(r.q)]],
+          tech: "μ(p) = q · exp(−(x̃ − c)² / (2σ² + ε)) · (1 + αT)(1 + βK) / ((1 + α)(1 + β)), (4)-tenglama; c, σ — mahalliy o‘rtacha va SD, T — mahalliy entropiya, K — Michelson kontrasti (7 × 7 oyna). Ko‘rsatish diapazoni 1–99-persentil." },
+        { eq: "(5)–(8)-tenglamalar", title: "Fuzzy morfologiya: F xaritasi",
+          what: "A’zolik xaritasi fuzzy eroziya va dilatatsiya bilan tozalanadi; ularning kuchi mahalliy ishonchlilikka bog‘liq, shuning uchun shovqin bostiriladi, tugun chegaralari esa saqlanadi. Natija — F — neyron tarmoqning ikkinchi kirish kanaliga aylanadi.",
+          see: "Chapda: F xaritasi. O‘ngda: F ning Otsu chegarasidan yuqori piksellari (ko‘k) va tugun konturi (oq).",
+          kv: [["γ, λ (validatsiyada tanlangan)", "2, 0 (closing)"], ["strukturaviy element radiusi", "1–5 piksel"], ["Otsu(F) Dice, test to‘plami", "0.20"]],
+          tech: "Radius r(p) va ishonchlilik w(p), (5)–(6); tortilgan eroziya va dilatatsiya, (7); F = λO + (1 − λ)C, (8)-tenglama. F segmentatsiya emas, tekstura kanali: uning Otsu sohasi radiolog konturiga faqat qisman mos keladi." },
+        { eq: "1.5 × quti, 224 × 224", title: r.mode === "expert" ? "Kontur qayerga qarashni belgilaydi" : "F xaritasi qayerga qarashni belgilaydi",
+          what: "Konturlangan tugundan 1.5 marta katta kvadrat soha kesib olinadi va 224 × 224 pikselga keltiriladi. Tarmoq ikki kanalni o‘qiydi: tasvir x̃ va fuzzy xarita F.",
+          see: "Chapda: to‘liq tasvirda kontur va kesma qutisi. O‘ngda: ikki kirish kanali.",
+          kv: [["kesma qatorlari", `${r.crop_box[0]}–${r.crop_box[1]}`], ["kesma ustunlari", `${r.crop_box[2]}–${r.crop_box[3]}`], ["tarmoq kirishi", "2 × 224 × 224"]],
+          callout: r.mode === "automatic" ? "Radiolog konturi bo‘lmasa, F dan topilgan soha odatda atrofdagi to‘qimani ham qamraydi; kesma keng bo‘ladi va keyingi bosqichdagi shakl belgilari odatdagi qiymatlardan ancha chetlashadi." : null,
+          tech: "Kontur qutisining markazida, katta tomonining 1.5 baravari o‘lchamidagi kvadrat kesma; maydon interpolyatsiyasi bilan 224 × 224 ga keltiriladi." },
+        { eq: "11 belgi, (10)-tenglama", title: "Tugunning o‘lchanadigan 11 ta belgisi",
+          what: "Konturlangan sohadan shakl, chet, exogenlik va yorqin nuqtalar o‘lchanadi — bular TI-RADS belgilarining hisoblanadigan muqobillari. Har bir qatorda shu tugun o‘quv to‘plamidagi xavfsiz va xavfli tugunlarga nisbatan qayerda turgani ko‘rsatilgan.",
+          see: "Yashil chiziq: xavfsiz o‘quv tugunlarining o‘rta yarmi. To‘q sariq: xavfli tugunlar. Oq nuqta: shu tugun; ◂ ▸ — shkaladan tashqarida.",
+          kv: [],
+          callout: "Diapazonlar ko‘p jihatdan ustma-ust tushadi: faqat shu belgilar bilan AUC 0.68 ga erishiladi. Qarorning asosiy qismi tasvirning o‘zidan keladi (atributsiyaning 85 %).",
+          tech: "Qatorlar ansambldagi o‘rtacha |SHAP| bo‘yicha tartiblangan. Birlashtirishdan oldin qiymatlar median bilan to‘ldiriladi va o‘quv statistikasi bilan standartlashtiriladi; Q_struct — kuzatilgan qiymatlar ulushi, (10)-tenglama." },
+        { eq: "(9)-tenglama, Grad-CAM", title: "Neyron tarmoq kesmani 128 ta songa siqadi",
+          what: "ImageNet’da oldindan o‘qitilgan ResNet-18 ikkala kanalni o‘qiydi va kesmani 128 ta son — tasvir embeddingi — bilan ifodalaydi. Grad-CAM tarmoqning xavflilik haqidagi dalili kesmaning qaysi qismidan kelganini ko‘rsatadi.",
+          see: "Chapda: Grad-CAM qatlami, yorqinroq joy — ta’siri kattaroq. O‘ngda: 1-model to‘plamining 128 ta embedding qiymati, yorqinroq — kattaroq.",
+          kv: [["tasvir embeddingi", `128 son × Q_img = ${f3(r.q)}`], ["birlashgan vektor z", "128 + 11 + 2 = 141"]],
+          tech: "h_img = f_θ([x̃, F]), (9); z = [Q_img·h_img ; Q_struct·d̃ ; Q_img, Q_struct], (11)-tenglama. Grad-CAM oxirgi residual blokda hisoblanadi va har bir tasvir uchun normallanadi; xira va yoyilgan xarita — dalil zaif ekanini bildiradi." },
+        { eq: "(12)–(14)-tenglamalar", title: "To‘rt model ovoz beradi, besh marta",
+          what: "To‘rt xil klassifikator bir xil 141 ta sonni o‘qiydi va har biri xavflilik ehtimolini beradi. Ovozlar har bir model validatsiya tasvirlarida qanchalik yaxshi ishlaganiga qarab tortiladi. Butun to‘plam besh xil tasodifiy seed bilan besh marta o‘qitilgan; har bir qator — ana shu besh model to‘plamidan biri.",
+          see: "Ustunlar: har bir model bergan ehtimollik. ω: uning og‘irligi. Oq chiziqcha: qaror chegarasi t*.",
+          kv: [["ansambl, to‘plamlar bo‘yicha", r.per_seed.map((s) => f3(s.ensemble)).join(" / ")], ["beshtasining o‘rtachasi", f3(r.p_final)]],
+          tech: "p_ens = Σ ω_k p_k, ω_k ∝ exp(−L_k^val / τ), τ = 0.05, (14)-tenglama. DL bosh qismi g_φ (141 → 64 → 1), tasodifiy o‘rmon (500 daraxt), XGBoost va namunaviy a’zolik s_n bilan fuzzy SVM, (12)–(13)." },
+        { eq: "(15)–(16)-tenglamalar", title: r.p_final >= r.t_star ? `Ehtimollik ${f2(r.p_final)} chegaradan yuqori — tugun xavfli deb belgilanadi` : `Ehtimollik ${f2(r.p_final)} chegaradan past — tugun xavfsiz deb topiladi`,
+          what: "Yakuniy ehtimollik besh model to‘plamining o‘rtachasidir. t* chegarasi validatsiya tasvirlarida xavfli tugunlarning kamida 95 % i aniqlanadigan qilib tanlangan. Shu sabab u past, va ehtimolligi 0.15–0.25 atrofidagi ba’zi xavfsiz tugunlar qo‘shimcha tekshiruvga belgilanadi.",
+          see: "Yashil zona: xavfsiz xulosa. To‘q sariq zona: xavfli xulosa. Oq chiziq: chegara t*. Ko‘k ko‘rsatkich: yakuniy ehtimollik; qisqa chiziqlar: besh model to‘plami.",
+          kv: [["yakuniy ehtimollik", f3(r.p_final)], ["chegara t*", f3(r.t_star)], ["kontur", r.mode === "expert" ? "radiolog" : "avtomatik"]],
+          tech: "p_final = σ(logit p_ens + Δ_reg), (16)-tenglama; TN3K da Δ_reg = 0, (15). Test to‘plamida t* da: sezgirlik 94.9 %, o‘ziga xoslik 32.3 %; AUC radiolog konturi bilan 0.815, avtomatik kontur bilan 0.823." },
+      ],
+    },
+  };
+
+  const DWELL = 5200;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const fromHash = location.hash.replace("#", "");
+  let lang = ["en", "uz"].includes(fromHash) ? fromHash : (store.get("tames-lang") || ((navigator.language || "").toLowerCase().startsWith("uz") ? "uz" : "en"));
   let mode = "expert", ci = 0, si = 0, playing = !reduced, timer = null;
   const $ = (id) => document.getElementById(id);
-  const fmt = (v, d = 3) => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(d));
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  const L = () => T[lang];
   const cur = () => DATA.cases[ci];
   const run = () => cur().modes[mode] || cur().modes[Object.keys(cur().modes)[0]];
+  const label = (k) => L()[k] || k;
   function outcome(c, m) {
-    const r = c.modes[m]; if (!r) return null; if (!c.truth) return null;
+    const r = c.modes[m]; if (!r || !c.truth) return null;
     const pos = r.label === "malignant", t = c.truth === "malignant";
     return pos && t ? "TP" : !pos && !t ? "TN" : pos ? "FP" : "FN";
   }
+  function staticText() {
+    const t = L();
+    document.documentElement.lang = lang;
+    $("t-sub").textContent = t.sub; $("t-h1").textContent = t.h1; $("t-lead").textContent = t.lead;
+    $("mode-group").setAttribute("aria-label", t.modeGroup);
+    $("m-expert").textContent = t.expert; $("m-auto").textContent = t.automatic;
+    $("t-cases").textContent = t.cases; $("t-up").textContent = t.up; $("t-up-img").textContent = t.upImg; $("t-up-mask").textContent = t.upMask; $("up-run").textContent = t.upRun;
+    $("offline-note").textContent = t.offline; $("prev").textContent = t.prev; $("next").textContent = t.next; $("hint").textContent = t.hint; $("t-foot").textContent = t.foot;
+    $("l-en").setAttribute("aria-pressed", lang === "en"); $("l-uz").setAttribute("aria-pressed", lang === "uz");
+  }
   function renderCases() {
+    const t = L();
     $("count").textContent = DATA.cases.length;
     $("cases").innerHTML = DATA.cases.map((c, i) => {
-      const r = c.modes[mode] || c.modes[Object.keys(c.modes)[0]]; const o = outcome(c, mode);
+      const r = c.modes[mode] || c.modes[Object.keys(c.modes)[0]], o = outcome(c, mode);
       return `<button class="case" type="button" data-i="${i}" aria-current="${i === ci}">
         <img src="${r.images.thumb}" alt="">
         <span><span class="id">${esc(c.id)}</span><span class="chips">
-          ${c.truth ? `<span class="chip ${c.truth}">${c.truth}</span>` : `<span class="chip">uploaded</span>`}
-          ${o ? `<span class="chip ${o === "TP" || o === "TN" ? "ok" : "miss"}" title="${o === "FP" ? "false positive" : o === "FN" ? "false negative" : o === "TP" ? "true positive" : "true negative"}">${o}</span>` : ""}
-          <span class="chip mono">p ${r.p_final.toFixed(2)}</span></span></span></button>`;
+          ${c.truth ? `<span class="chip ${c.truth}">${label(c.truth)}</span>` : `<span class="chip">${t.uploaded}</span>`}
+          ${o ? `<span class="chip ${o === "TP" || o === "TN" ? "ok" : "miss"}" title="${t.oc[o]}">${o}</span>` : ""}
+          <span class="chip mono">p ${f2(r.p_final)}</span></span></span></button>`;
     }).join("");
     $("cases").querySelectorAll(".case").forEach((b) => b.addEventListener("click", () => { ci = +b.dataset.i; si = 0; render(); restart(); }));
   }
+  const scale = (r) => `<div class="gscale"><span>0</span><span class="t" style="left:${r.t_star * 100}%">t* ${f3(r.t_star)}</span><span style="left:50%">0.5</span><span style="left:100%">1</span></div>`;
+  function renderSummary() {
+    const t = L(), c = cur(), r = run(), o = outcome(c, mode);
+    $("summary").innerHTML = `<div>
+        <div class="head"><h2>${esc(c.id)}</h2><span class="label">${t.pred} · ${t[r.mode]}</span></div>
+        <div class="vrow"><span class="pill ${r.label}">${label(r.label)}</span><span class="pval">${f3(r.p_final)}<small>${t.prob}</small></span><span class="label">${t.thr} t* = ${f3(r.t_star)}</span></div>
+        <div class="gtrack sm"><span class="zone b" style="width:${r.t_star * 100}%"></span><span class="zone m" style="left:${r.t_star * 100}%"></span><span class="tline" style="left:${r.t_star * 100}%"></span><span class="needle" data-left="${r.p_final * 100}" style="left:${reduced ? r.p_final * 100 : 0}%"></span></div>
+        ${scale(r)}</div>
+      <div class="ref"><span class="label">${t.ref}</span>
+        ${c.truth ? `<span class="dx ${c.truth}">${label(c.truth)}</span><div class="outcome ${o === "TP" || o === "TN" ? "ok" : "miss"}">${t.ocLine[o]}</div>` : `<div class="outcome">${t.noRef}</div>`}</div>`;
+  }
   function renderStages() {
-    $("stages").innerHTML = STAGES.map((s, i) => `<button class="stage-btn ${i < si ? "done" : ""} ${playing ? "playing" : ""}" type="button" data-i="${i}" ${i === si ? 'aria-current="step"' : ""} style="--dwell:${DWELL}ms"><span class="n">${String(i + 1).padStart(2, "0")}</span><span class="t">${s.t}</span><span class="bar"></span></button>`).join("");
+    const t = L();
+    $("stages").innerHTML = t.stages.map((s, i) => `<button class="stage-btn ${i < si ? "done" : ""} ${playing ? "playing" : ""}" type="button" data-i="${i}" ${i === si ? 'aria-current="step"' : ""} style="--dwell:${DWELL}ms"><span class="n">${String(i + 1).padStart(2, "0")}</span><span class="t">${s}</span><span class="bar"></span></button>`).join("");
     $("stages").querySelectorAll(".stage-btn").forEach((b) => b.addEventListener("click", () => { si = +b.dataset.i; render(); restart(); }));
   }
   const tile = (src, cap, cls = "square") => `<figure class="tile"><div class="sweep ${cls} ${reduced ? "" : "anim"}"><img src="${src}" alt="${esc(cap)}"></div><figcaption>${cap}</figcaption></figure>`;
-  function stageHTML(r, c) {
-    const box = r.crop_box, avg = (k) => r.per_seed.reduce((a, s) => a + s.weights[k], 0) / r.per_seed.length;
+  const mini = (p, col, thr) => `<div class="mini"><span class="f" data-w="${p * 100}" style="background:${col};width:${reduced ? p * 100 : 0}%"></span><span class="tk" style="left:${thr * 100}%"></span><span class="lbl">${f2(p)}</span></div>`;
+  function visual(r, c) {
+    const t = L(), lang_uz = lang === "uz";
     switch (si) {
-      case 0: return `<div class="visual">${tile(r.images.raw, `${c.id} · ${r.size[0]} × ${r.size[1]} px, grey levels 0–255`, "")}</div>
-        <div class="reading"><span class="eq">${STAGES[0].eq}</span><h3>A single transverse B-mode frame</h3>
-        <p>This is all the model sees: one ultrasound image${r.mode === "expert" ? " and, in this setting, the radiologist's outline of the nodule" : "; in this setting no outline is given, the model will find the region itself"}. The first quantity it computes is an image-quality coefficient from the noise level.</p>
-        <dl class="kv"><dt>image size</dt><dd>${r.size[0]} × ${r.size[1]}</dd><dt>SNR (Immerkær)</dt><dd>${r.snr.toFixed(1)}</dd><dt>quality q, Eq. (3)</dt><dd>${r.q.toFixed(3)}</dd></dl>
-        <p class="note">q = SNR / (SNR + SNR₀), with SNR₀ the median training SNR; q later scales the image embedding (Q_img).</p></div>`;
-      case 1: return `<div class="visual"><div class="tiles two">${tile(r.images.crop, "normalized image x̃, Eq. (1)")}${tile(r.images.mu, "membership μ(p), Eq. (4)")}</div></div>
-        <div class="reading"><span class="eq">${STAGES[1].eq}</span><h3>Every pixel gets a fuzzy membership</h3>
-        <p>μ(p) is high where the local 7 × 7 window is homogeneous and low at noisy or edge pixels. It combines a Gaussian closeness to the local mean with local texture T and Michelson contrast K, and is capped by the image quality q.</p>
-        <dl class="kv"><dt>α, β (validation)</dt><dd>2, 0.5</dd><dt>window</dt><dd>7 × 7 px</dd><dt>cap q</dt><dd>${r.q.toFixed(3)}</dd></dl>
-        <p class="note">Bright = high membership. Display range 1–99th percentile of each map.</p></div>`;
-      case 2: return `<div class="visual"><div class="tiles two">${tile(r.images.F, "fuzzy map F, Eq. (8)")}${tile(r.images.otsu, "Otsu(F) foreground (blue), delineation (white)")}</div></div>
-        <div class="reading"><span class="eq">${STAGES[2].eq}</span><h3>Reliability-weighted fuzzy morphology</h3>
-        <p>Erosion and dilation with a disc whose radius grows with local variance, blended with the identity where the image is unreliable. F = λ·opening + (1 − λ)·closing suppresses speckle and keeps nodule borders; it becomes the second input channel of the network.</p>
-        <dl class="kv"><dt>γ, λ (validation)</dt><dd>2, 0 (closing)</dd><dt>radius r(p)</dt><dd>1–5 px</dd></dl>
-        <p class="note">Thresholding F with Otsu gives the blue region; its Dice with expert outlines is modest (0.20 on the test set), so F is a texture channel, not a segmenter.</p></div>`;
-      case 3: return `<div class="visual"><div class="tiles two">${tile(r.images.annotated, r.mode === "expert" ? "radiologist outline (orange) and crop box" : "automatic outline from Otsu(F) (blue) and crop box", "")}<div class="tiles">${tile(r.images.crop, "channel 1: x̃")}${tile(r.images.F, "channel 2: F")}</div></div></div>
-        <div class="reading"><span class="eq">${STAGES[3].eq}</span><h3>${r.mode === "expert" ? "The outline fixes the crop" : "The fuzzy map fixes the crop"}</h3>
-        <p>A square box 1.5 × the outlined region is cut out and resized to 224 × 224. The network receives two channels: the normalized image x̃ and the fuzzy map F.</p>
-        <dl class="kv"><dt>crop rows</dt><dd>${box[0]}–${box[1]}</dd><dt>crop columns</dt><dd>${box[2]}–${box[3]}</dd><dt>input tensor</dt><dd>2 × 224 × 224</dd></dl>
-        ${r.mode === "automatic" ? `<p class="note">Without an expert outline, Otsu(F) usually covers surrounding tissue too, so the crop is wide and the shape descriptors in the next stage drift far from typical values.</p>` : ""}</div>`;
-      case 4: return `<div class="visual"><div class="desc" id="desc">${r.descriptors.map((d) => {
+      case 0: return tile(r.images.raw, `${c.id} · ${r.size[0]} × ${r.size[1]} px`, "");
+      case 1: return `<div class="tiles two">${tile(r.images.crop, lang_uz ? "normallangan tasvir x̃" : "normalized image x̃")}${tile(r.images.mu, lang_uz ? "a’zolik μ" : "membership μ")}</div>`;
+      case 2: return `<div class="tiles two">${tile(r.images.F, lang_uz ? "fuzzy xarita F" : "fuzzy map F")}${tile(r.images.otsu, lang_uz ? "Otsu(F) (ko‘k), kontur (oq)" : "Otsu(F) (blue), outline (white)")}</div>`;
+      case 3: return `<div class="tiles two">${tile(r.images.annotated, r.mode === "expert" ? (lang_uz ? "radiolog konturi (to‘q sariq), kesma qutisi" : "expert outline (orange), crop box") : (lang_uz ? "avtomatik kontur (ko‘k), kesma qutisi" : "automatic outline (blue), crop box"), "")}<div class="tiles">${tile(r.images.crop, lang_uz ? "1-kanal: x̃" : "channel 1: x̃")}${tile(r.images.F, lang_uz ? "2-kanal: F" : "channel 2: F")}</div></div>`;
+      case 4: return `<div class="desc">${r.descriptors.map((d) => {
           const [lo, hi] = d.axis, span = hi - lo || 1, pos = (v) => Math.max(0, Math.min(100, ((v - lo) / span) * 100));
-          const out = d.value < lo ? "◂" : d.value > hi ? "▸" : "";
-          return `<div class="drow" title="${esc(d.help)}"><span class="name">${esc(d.label)}</span><span class="track">
+          const out = d.value < lo ? "◂" : d.value > hi ? "▸" : "", nm = t.desc[d.key] || [d.label, d.help];
+          return `<div class="drow" title="${esc(nm[1])}"><span class="name">${esc(nm[0])}</span><span class="track">
             <span class="band b" style="left:${pos(d.benign[0])}%;width:${Math.max(1, pos(d.benign[2]) - pos(d.benign[0]))}%"></span>
             <span class="band m" style="left:${pos(d.malignant[0])}%;width:${Math.max(1, pos(d.malignant[2]) - pos(d.malignant[0]))}%"></span>
             <span class="med b" style="left:${pos(d.benign[1])}%"></span><span class="med m" style="left:${pos(d.malignant[1])}%"></span>
             <span class="dot ${out ? "out" : ""}" data-dir="${out}" data-left="${pos(d.value)}" style="left:${reduced ? pos(d.value) : 50}%"></span></span>
             <span class="val">${fmt(d.value)}</span></div>`; }).join("")}</div>
-          <div class="legend"><span><span class="sw" style="background:var(--benign)"></span>benign training images, middle 50 %</span><span><span class="sw" style="background:var(--malig)"></span>malignant, middle 50 %</span><span>● this image</span></div></div>
-        <div class="reading"><span class="eq">${STAGES[4].eq}</span><h3>Eleven sonographic descriptors</h3>
-        <p>Shape, margin, echogenicity and echogenic-foci measures computed from the image inside the outline, the computable counterparts of TI-RADS features. Rows are ordered by their weight in the model's SHAP attribution.</p>
-        <p class="note">Malignant nodules in TN3K tend to be taller-than-wide, less solid and smaller. The bands overlap heavily, which is why descriptors alone reach only AUC 0.68; the image embedding carries 85 % of the attribution.</p></div>`;
-      case 5: return `<div class="visual"><div class="tiles two">${r.images.cam ? tile(r.images.cam, "Grad-CAM, last residual block (seed 0)") : ""}<figure class="tile"><div class="emb" id="emb">${r.embedding.map(() => "<span></span>").join("")}</div><figcaption>image embedding h_img: 128 numbers (seed 0)</figcaption></figure></div></div>
-        <div class="reading"><span class="eq">${STAGES[5].eq}</span><h3>ResNet-18 turns the crop into 128 numbers</h3>
-        <p>The ImageNet-initialized backbone reads both channels; its 512 pooled features are projected to the embedding h_img. Grad-CAM shows where the evidence for malignancy sits in the crop.</p>
-        <dl class="kv"><dt>embedding</dt><dd>128-d, scaled by Q_img = ${r.q.toFixed(3)}</dd><dt>fused vector z</dt><dd>128 + 11 + 2 = 141</dd></dl>
-        <p class="note">Saliency is normalized per map; a weak, diffuse map means the network found little to point at.</p></div>`;
-      case 6: return `<div class="visual"><table class="learn"><thead><tr><th>seed</th>${LEARN.map(([k, n]) => `<th>${n}<br><span class="w">mean ω ${avg(k).toFixed(2)}</span></th>`).join("")}<th>ensemble</th></tr></thead><tbody>
-          ${r.per_seed.map((s) => `<tr><td class="mono">${s.seed}</td>${LEARN.map(([k]) => `<td>${mini(s[k], `var(--l-${k})`, r.t_star)}<span class="w">ω ${s.weights[k].toFixed(2)}</span></td>`).join("")}<td>${mini(s.ensemble, "var(--accent)", r.t_star)}</td></tr>`).join("")}</tbody></table>
-          <div class="legend"><span>white tick = threshold t* = ${r.t_star.toFixed(3)}</span><span>ω = ensemble weight fixed on validation</span></div></div>
-        <div class="reading"><span class="eq">${STAGES[6].eq}</span><h3>Four learners vote, weighted by validation loss</h3>
-        <p>The DL head, a random forest, gradient-boosted trees and a fuzzy SVM each read z and give a probability. Their weights ω come from validation log-loss, ω ∝ exp(−L/τ) with τ = 0.05, so the learner that generalized best dominates. This repeats for the five model sets trained with seeds 0–4.</p>
-        <dl class="kv"><dt>ensemble, per seed</dt><dd>${r.per_seed.map((s) => s.ensemble.toFixed(3)).join(" / ")}</dd><dt>mean over seeds</dt><dd>${r.p_final.toFixed(3)}</dd></dl></div>`;
-      default: {
-        const o = outcome(c, mode);
-        return `<div class="visual gauge"><div class="verdict"><span class="big">${r.p_final.toFixed(3)}</span><span class="pill ${r.label}">${r.label}</span></div>
-          <div class="gtrack" id="gauge"><span class="zone b" style="width:${r.t_star * 100}%"></span><span class="zone m" style="left:${r.t_star * 100}%"></span>
-            <span class="tline" style="left:${r.t_star * 100}%"></span>${r.per_seed.map((s) => `<span class="stick" data-left="${s.ensemble * 100}" style="left:${reduced ? s.ensemble * 100 : 0}%"></span>`).join("")}
-            <span class="needle" data-left="${r.p_final * 100}" style="left:${reduced ? r.p_final * 100 : 0}%"></span></div>
-          <div class="gscale"><span>0</span><span>t* = ${r.t_star.toFixed(3)}</span><span>0.5</span><span>1</span></div>
-          <div class="legend"><span><span class="sw" style="background:color-mix(in srgb,var(--benign) 50%,transparent)"></span>benign zone</span><span><span class="sw" style="background:color-mix(in srgb,var(--malig) 50%,transparent)"></span>malignant zone</span><span>short ticks: the five seeds</span></div>
-          ${c.truth ? `<p class="truth">Reference label: <strong>${c.truth}</strong> · outcome <strong>${o}</strong>${o === "FP" ? " (benign flagged for review)" : o === "FN" ? " (malignant missed)" : ""}</p>` : `<p class="truth">Uploaded image: no reference label.</p>`}</div>
-        <div class="reading"><span class="eq">${STAGES[7].eq}</span><h3>${r.p_final >= r.t_star ? `p = ${r.p_final.toFixed(2)} is above t*, so the nodule is flagged malignant` : `p = ${r.p_final.toFixed(2)} is below t*, so the nodule is called benign`}</h3>
-        <p>The regional prior Δ_reg is 0 on TN3K, so p_final is the ensemble probability averaged over the five seeds. The threshold t* was fixed on validation so that at least 95 % of malignant nodules are caught; that is why it is low and why benign nodules near 0.15–0.25 are flagged for review.</p>
-        <dl class="kv"><dt>p_final</dt><dd>${r.p_final.toFixed(3)}</dd><dt>threshold t*</dt><dd>${r.t_star.toFixed(3)}</dd><dt>setting</dt><dd>${r.mode} delineation</dd></dl></div>`;
+          <div class="legend"><span><span class="sw" style="background:var(--benign)"></span>${t.bandsB}</span><span><span class="sw" style="background:var(--malig)"></span>${t.bandsM}</span><span>${t.thisOne}</span></div>`;
+      case 5: return `<div class="tiles two">${r.images.cam ? tile(r.images.cam, "Grad-CAM") : ""}<figure class="tile"><div class="emb" id="emb">${r.embedding.map(() => "<span></span>").join("")}</div><figcaption>${lang_uz ? "tasvir embeddingi h_img: 128 son" : "image embedding h_img: 128 numbers"}</figcaption></figure></div>`;
+      case 6: {
+        const avg = (k) => r.per_seed.reduce((a, s) => a + s.weights[k], 0) / r.per_seed.length;
+        const ks = ["dl", "rf", "xgb", "fsvm"];
+        return `<div class="tablewrap"><table class="learn"><thead><tr><th>${t.set}</th>${ks.map((k) => `<th>${t.learn[k]}<br><span class="w">${t.meanW} ${f2(avg(k))}</span></th>`).join("")}<th>${t.ens}</th></tr></thead><tbody>
+          ${r.per_seed.map((s, j) => `<tr><td class="set">${j + 1}</td>${ks.map((k) => `<td>${mini(s[k], `var(--l-${k})`, r.t_star)}<span class="w">ω ${f2(s.weights[k])}</span></td>`).join("")}<td>${mini(s.ensemble, "var(--accent)", r.t_star)}</td></tr>`).join("")}</tbody></table></div>`;
       }
+      default: return `<div class="vrow"><span class="pval" style="font-size:2.3rem">${f3(r.p_final)}</span><span class="pill ${r.label}">${label(r.label)}</span></div>
+        <div class="gtrack lg"><span class="zone b" style="width:${r.t_star * 100}%"></span><span class="zone m" style="left:${r.t_star * 100}%"></span><span class="tline" style="left:${r.t_star * 100}%"></span>
+          ${r.per_seed.map((s) => `<span class="stick" data-left="${s.ensemble * 100}" style="left:${reduced ? s.ensemble * 100 : 0}%"></span>`).join("")}<span class="needle" data-left="${r.p_final * 100}" style="left:${reduced ? r.p_final * 100 : 0}%"></span></div>
+        ${scale(r)}
+        <div class="legend"><span><span class="sw" style="background:color-mix(in srgb,var(--benign) 55%,transparent)"></span>${t.zoneB}</span><span><span class="sw" style="background:color-mix(in srgb,var(--malig) 55%,transparent)"></span>${t.zoneM}</span><span>${t.seeds}</span></div>`;
     }
   }
-  const mini = (p, col, t) => `<div class="mini"><span class="f" data-w="${p * 100}" style="background:${col};width:${reduced ? p * 100 : 0}%"></span><span class="tk" style="left:${t * 100}%"></span><span class="lbl">${p.toFixed(2)}</span></div>`;
+  function reading(r, c) {
+    const t = L(), s = t.S(r, c)[si];
+    return `<div class="stepno"><span class="label">${t.step(si + 1, 8)}</span><span class="eq">${s.eq}</span></div>
+      <h3>${s.title}</h3>
+      <div class="block"><h4>${t.what}</h4><p>${s.what}</p></div>
+      <div class="block"><h4>${t.see}</h4><p>${s.see}</p></div>
+      ${s.kv.length ? `<dl class="kv">${s.kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>` : ""}
+      ${s.callout ? `<p class="callout">${s.callout}</p>` : ""}
+      <details><summary>${t.tech}</summary><p>${s.tech}</p></details>`;
+  }
   function animateIn(r) {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       document.querySelectorAll("[data-left]").forEach((e) => (e.style.left = e.dataset.left + "%"));
@@ -304,39 +493,43 @@
   }
   function render() {
     const c = cur(), r = run();
-    $("case-id").textContent = c.id;
-    const o = outcome(c, mode);
-    $("case-meta").textContent = `${c.truth ? "reference: " + c.truth + " · " : ""}${r.mode} delineation · p_final ${r.p_final.toFixed(3)} → ${r.label}${o ? " (" + o + ")" : ""}`;
+    staticText();
     $("m-expert").setAttribute("aria-pressed", mode === "expert"); $("m-auto").setAttribute("aria-pressed", mode === "automatic");
     $("m-expert").disabled = !c.modes.expert; $("m-auto").disabled = !c.modes.automatic;
-    renderCases(); renderStages();
-    $("stage").innerHTML = stageHTML(r, c); animateIn(r);
-    $("play").textContent = playing ? "Pause" : "Play";
+    if (!c.modes[mode]) mode = Object.keys(c.modes)[0];
+    renderCases(); renderSummary(); renderStages();
+    $("stage").innerHTML = `<div class="visual">${visual(r, c)}</div><div class="reading">${reading(r, c)}</div>`;
+    animateIn(r);
+    $("play").textContent = playing ? L().pause : L().play;
   }
-  function restart() { clearTimeout(timer); if (!playing) return; timer = setTimeout(() => { if (si < STAGES.length - 1) si++; else { si = 0; ci = (ci + 1) % DATA.cases.length; } render(); restart(); }, DWELL); }
+  function restart() { clearTimeout(timer); if (!playing) return; timer = setTimeout(() => { if (si < 7) si++; else { si = 0; ci = (ci + 1) % DATA.cases.length; } render(); restart(); }, DWELL); }
   $("prev").onclick = () => { si = Math.max(0, si - 1); render(); restart(); };
-  $("next").onclick = () => { si = Math.min(STAGES.length - 1, si + 1); render(); restart(); };
+  $("next").onclick = () => { si = Math.min(7, si + 1); render(); restart(); };
   $("play").onclick = () => { playing = !playing; render(); restart(); };
   $("m-expert").onclick = () => { mode = "expert"; render(); restart(); };
   $("m-auto").onclick = () => { mode = "automatic"; render(); restart(); };
-  document.addEventListener("keydown", (e) => { if (e.target.tagName === "INPUT") return; if (e.key === "ArrowRight") $("next").click(); if (e.key === "ArrowLeft") $("prev").click(); if (e.key === " ") { e.preventDefault(); $("play").click(); } });
+  const setLang = (l) => { lang = l; store.set("tames-lang", l); render(); };
+  $("l-en").onclick = () => setLang("en"); $("l-uz").onclick = () => setLang("uz");
+  document.addEventListener("keydown", (e) => { if (["INPUT", "SUMMARY"].includes(e.target.tagName)) return; if (e.key === "ArrowRight") $("next").click(); if (e.key === "ArrowLeft") $("prev").click(); if (e.key === " " && e.target.tagName !== "BUTTON") { e.preventDefault(); $("play").click(); } });
+  // pause autoplay while the reader opens technical detail
+  document.addEventListener("toggle", (e) => { if (e.target.tagName === "DETAILS" && e.target.open && playing) { playing = false; clearTimeout(timer); $("play").textContent = L().play; document.querySelectorAll(".stage-btn").forEach((b) => b.classList.remove("playing")); } }, true);
 
-  // Live mode: only when served by scripts/13_demo_server.py
-  const readB64 = (f) => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = bad; r.readAsDataURL(f); });
+  // live mode: only when served by scripts/13_demo_server.py
+  const readB64 = (f) => new Promise((ok, bad) => { const rd = new FileReader(); rd.onload = () => ok(String(rd.result).split(",")[1]); rd.onerror = bad; rd.readAsDataURL(f); });
   fetch("api/health").then((r) => (r.ok ? r.json() : Promise.reject())).then((h) => {
     if (!h || !h.ok) return;
     $("upload").hidden = false; $("offline-note").hidden = true;
     $("up-run").onclick = async () => {
       const f = $("up-img").files[0], m = $("up-mask").files[0], st = $("up-status");
-      if (!f) { st.textContent = "Choose an image first."; st.className = "status err"; return; }
-      $("up-run").disabled = true; st.className = "status"; st.textContent = `Running the fuzzy front end and ${h.models || 20} models…`;
+      if (!f) { st.textContent = L().upNeed; st.className = "status err"; return; }
+      $("up-run").disabled = true; st.className = "status"; st.textContent = L().upBusy(h.models || 20);
       try {
         const body = { name: f.name, image: await readB64(f), mask: m ? await readB64(m) : null };
         const res = await fetch("api/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         const js = await res.json(); if (!res.ok) throw new Error(js.error || res.statusText);
         DATA.cases.unshift(js); ci = 0; si = 0; mode = js.modes.expert ? "expert" : "automatic"; playing = !reduced;
-        st.textContent = `Done: p_final ${(js.modes[mode].p_final).toFixed(3)} (${js.modes[mode].label}).`; render(); restart();
-      } catch (e) { st.className = "status err"; st.textContent = "Could not run the model: " + e.message; }
+        const rr = js.modes[mode]; st.textContent = L().upDone(f3(rr.p_final), label(rr.label)); render(); restart();
+      } catch (e) { st.className = "status err"; st.textContent = L().upErr + e.message; }
       finally { $("up-run").disabled = false; }
     };
   }).catch(() => {});
