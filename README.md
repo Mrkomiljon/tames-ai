@@ -60,6 +60,8 @@ Or step by step (`--set key=value` overrides any config entry):
 | 7 | `07_explain.py` | `explain_tames_seed0/` SHAP summary + stability, Grad-CAM panel, faithfulness |
 | 9–10 | `09_lowdata.sh`, `10_lowdata_table.py` | low-data experiment: TAMES vs image-only CNN retrained on 10/25/50 % of the training partition (`train_frac`), `runs/lowdata_table.csv`, `lowdata.png` |
 | 11 | `11_predict.py --image img.jpg [--mask mask.png] [--cam out.png]` | inference on one image with the trained models: per-learner and ensemble probabilities per seed, seed-averaged p_final and label at t*, optional Grad-CAM overlay; without `--mask` the automatic-delineation models are used |
+| 12 | `12_demo_export.py` | `demo/tames_walkthrough.html`: animated walkthrough of six test images (TN, FP, TP, FN) through every pipeline stage, expert and automatic delineation |
+| 13 | `13_demo_server.py [--port 8765]` | live walkthrough UI on localhost: upload an image (and optionally a mask) and watch the same stages computed by the trained models |
 | 8 | `08_robustness.py` (optional, after 3–5) | `robustness/` AUC of TAMES vs image-only CNN and late fusion under noise, speckle, blur and contrast loss applied to the raw test images (front end recomputed, models frozen); `robustness.png` |
 
 ## Results (official TN3K test set, 614 images, predictions pooled over 5 seeds)
