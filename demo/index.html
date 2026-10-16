@@ -141,12 +141,15 @@
   .drow { display: grid; grid-template-columns: 10.5em minmax(0, 1fr) 4.2em; gap: 10px; align-items: center; font-size: 0.82rem; }
   .drow .name { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .drow .val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
-  .track { position: relative; height: 22px; border-radius: 4px; background: var(--panel-2); }
+  .track { position: relative; height: 30px; border-radius: 4px; background: var(--panel-2); }
+  .ax { position: absolute; bottom: -1px; font-family: var(--font-mono); font-size: 0.6rem; line-height: 1; color: var(--faint); pointer-events: none; }
+  .ax.l { left: 3px; } .ax.r { right: 3px; }
+  .logtag { display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 4px; border: 1px solid var(--line-2); font-family: var(--font-mono); font-size: 0.6rem; line-height: 1.4; color: var(--muted); vertical-align: 1px; }
   .band { position: absolute; height: 6px; border-radius: 3px; opacity: 0.8; }
-  .band.b { top: 3px; background: var(--benign); } .band.m { bottom: 3px; background: var(--malig); }
+  .band.b { top: 4px; background: var(--benign); } .band.m { top: 13px; background: var(--malig); }
   .med { position: absolute; width: 2px; height: 10px; margin-left: -1px; background: #fff; opacity: 0.5; }
-  .med.b { top: 1px; } .med.m { bottom: 1px; }
-  .dot { position: absolute; top: 50%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: #fff; border: 2px solid var(--bg); box-shadow: 0 0 0 1px #fff; transition: left 900ms cubic-bezier(.3,.7,.2,1); }
+  .med.b { top: 2px; } .med.m { top: 11px; }
+  .dot { position: absolute; top: 12px; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: #fff; border: 2px solid var(--bg); box-shadow: 0 0 0 1px #fff; transition: left 900ms cubic-bezier(.3,.7,.2,1); }
   .dot.out::after { content: attr(data-dir); position: absolute; top: -18px; left: -2px; color: var(--amber); font-size: 0.75rem; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--muted); }
   .sw { display: inline-block; width: 18px; height: 6px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
@@ -262,7 +265,7 @@
       learn: { dl: "DL head", rf: "Random forest", xgb: "XGBoost", fsvm: "Fuzzy SVM" },
       set: "model set", ens: "ensemble", meanW: "mean weight ω",
       zoneB: "benign zone", zoneM: "malignant zone", seeds: "short ticks: the five model sets",
-      bandsB: "benign training nodules, middle half", bandsM: "malignant, middle half", thisOne: "● this nodule",
+      bandsB: "benign training nodules, middle half", bandsM: "malignant, middle half", thisOne: "● this nodule", logScale: "logarithmic scale", offScale: "beyond the scale", axis: "scale",
       up: "Try your own image", upImg: "Ultrasound image (PNG or JPEG)", upMask: "Nodule outline mask (optional, white = nodule)",
       upRun: "Run TAMES AI", upNeed: "Choose an image first.", upBusy: (n) => `Running the fuzzy front end and ${n} models…`,
       upDone: (p, l) => `Done: probability ${p} (${l}).`, upErr: "Could not run the model: ",
@@ -300,7 +303,7 @@
           tech: "Square crop centred on the bounding box of the outline, side 1.5 × the larger box side, resized with area interpolation." },
         { eq: "11 features, Eq. (10)", title: "Eleven measurable features of the nodule",
           what: "From the outlined region the model measures shape, margin, echogenicity and bright spots, the computable counterparts of TI-RADS features. Each row shows where this nodule sits compared with the benign and malignant nodules of the training set.",
-          see: "Green band: middle half of benign training nodules. Orange band: malignant. White dot: this nodule; ◂ ▸ means off the scale.",
+          see: "Green band: middle half of benign training nodules. Orange band: malignant. White dot: this nodule. Small numbers at the ends give the scale; features marked log, whose values span a very wide range, use a logarithmic scale.",
           kv: [],
           callout: "The bands overlap a lot: on their own these features reach AUC 0.68. Most of the decision comes from the image itself (85 % of the attribution).",
           tech: "Rows are ordered by mean |SHAP| in the ensemble. Before fusion the values are median-imputed and z-scored with training statistics; Q_struct is the share of observed values, Eq. (10)." },
@@ -341,7 +344,7 @@
       learn: { dl: "DL bosh qismi", rf: "Tasodifiy o‘rmon", xgb: "XGBoost", fsvm: "Fuzzy SVM" },
       set: "to‘plam", ens: "ansambl", meanW: "o‘rtacha og‘irlik ω",
       zoneB: "xavfsiz zona", zoneM: "xavfli zona", seeds: "qisqa chiziqlar: besh model to‘plami",
-      bandsB: "xavfsiz o‘quv tugunlari, o‘rta yarmi", bandsM: "xavfli, o‘rta yarmi", thisOne: "● shu tugun",
+      bandsB: "xavfsiz o‘quv tugunlari, o‘rta yarmi", bandsM: "xavfli, o‘rta yarmi", thisOne: "● shu tugun", logScale: "logarifmik shkala", offScale: "shkaladan tashqarida", axis: "shkala",
       up: "O‘z tasviringizni sinang", upImg: "UTT tasviri (PNG yoki JPEG)", upMask: "Tugun konturi maskasi (ixtiyoriy, oq = tugun)",
       upRun: "TAMES AI ni ishga tushirish", upNeed: "Avval tasvirni tanlang.", upBusy: (n) => `Fuzzy ishlov va ${n} ta model ishlamoqda…`,
       upDone: (p, l) => `Tayyor: ehtimollik ${p} (${l}).`, upErr: "Modelni ishga tushirib bo‘lmadi: ",
@@ -379,7 +382,7 @@
           tech: "Kontur qutisining markazida, katta tomonining 1.5 baravari o‘lchamidagi kvadrat kesma; maydon interpolyatsiyasi bilan 224 × 224 ga keltiriladi." },
         { eq: "11 belgi, (10)-tenglama", title: "Tugunning o‘lchanadigan 11 ta belgisi",
           what: "Konturlangan sohadan shakl, chet, exogenlik va yorqin nuqtalar o‘lchanadi — bular TI-RADS belgilarining hisoblanadigan muqobillari. Har bir qatorda shu tugun o‘quv to‘plamidagi xavfsiz va xavfli tugunlarga nisbatan qayerda turgani ko‘rsatilgan.",
-          see: "Yashil chiziq: xavfsiz o‘quv tugunlarining o‘rta yarmi. To‘q sariq: xavfli tugunlar. Oq nuqta: shu tugun; ◂ ▸ — shkaladan tashqarida.",
+          see: "Yashil chiziq: xavfsiz o‘quv tugunlarining o‘rta yarmi. To‘q sariq: xavfli tugunlar. Oq nuqta: shu tugun. Chetlardagi kichik raqamlar shkalani bildiradi; qiymatlari juda keng oraliqda bo‘lgan, log deb belgilangan belgilar logarifmik shkalada.",
           kv: [],
           callout: "Diapazonlar ko‘p jihatdan ustma-ust tushadi: faqat shu belgilar bilan AUC 0.68 ga erishiladi. Qarorning asosiy qismi tasvirning o‘zidan keladi (atributsiyaning 85 %).",
           tech: "Qatorlar ansambldagi o‘rtacha |SHAP| bo‘yicha tartiblangan. Birlashtirishdan oldin qiymatlar median bilan to‘ldiriladi va o‘quv statistikasi bilan standartlashtiriladi; Q_struct — kuzatilgan qiymatlar ulushi, (10)-tenglama." },
@@ -471,15 +474,19 @@
       case 2: return `<div class="tiles two">${tile(r.images.F, lang_uz ? "fuzzy xarita F" : "fuzzy map F")}${tile(r.images.otsu, lang_uz ? "Otsu(F) (ko‘k), kontur (oq)" : "Otsu(F) (blue), outline (white)")}</div>`;
       case 3: return `<div class="tiles two">${tile(r.images.annotated, r.mode === "expert" ? (lang_uz ? "radiolog konturi (to‘q sariq), kesma qutisi" : "expert outline (orange), crop box") : (lang_uz ? "avtomatik kontur (ko‘k), kesma qutisi" : "automatic outline (blue), crop box"), "")}<div class="tiles">${tile(r.images.crop, lang_uz ? "1-kanal: x̃" : "channel 1: x̃")}${tile(r.images.F, lang_uz ? "2-kanal: F" : "channel 2: F")}</div></div>`;
       case 4: return `<div class="desc">${r.descriptors.map((d) => {
-          const [lo, hi] = d.axis, span = hi - lo || 1, pos = (v) => Math.max(0, Math.min(100, ((v - lo) / span) * 100));
+          const [lo, hi] = d.axis, isLog = lo > 0 && hi / lo >= 20;
+          const tf = (v) => (isLog ? Math.log10(Math.max(v, lo / 10)) : v), a = tf(lo), b = tf(hi), span = b - a || 1;
+          const pos = (v) => Math.max(0, Math.min(100, ((tf(v) - a) / span) * 100));
           const out = d.value < lo ? "◂" : d.value > hi ? "▸" : "", nm = t.desc[d.key] || [d.label, d.help];
-          return `<div class="drow" title="${esc(nm[1])}"><span class="name">${esc(nm[0])}</span><span class="track">
+          const tick = (v) => (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
+          return `<div class="drow" title="${esc(nm[1])} · ${t.axis}: ${tick(lo)}–${tick(hi)}${isLog ? " (" + t.logScale + ")" : ""}"><span class="name">${esc(nm[0])}${isLog ? `<span class="logtag">log</span>` : ""}</span><span class="track">
+            <span class="ax l">${tick(lo)}</span><span class="ax r">${tick(hi)}</span>
             <span class="band b" style="left:${pos(d.benign[0])}%;width:${Math.max(1, pos(d.benign[2]) - pos(d.benign[0]))}%"></span>
             <span class="band m" style="left:${pos(d.malignant[0])}%;width:${Math.max(1, pos(d.malignant[2]) - pos(d.malignant[0]))}%"></span>
             <span class="med b" style="left:${pos(d.benign[1])}%"></span><span class="med m" style="left:${pos(d.malignant[1])}%"></span>
             <span class="dot ${out ? "out" : ""}" data-dir="${out}" data-left="${pos(d.value)}" style="left:${reduced ? pos(d.value) : 50}%"></span></span>
             <span class="val">${fmt(d.value)}</span></div>`; }).join("")}</div>
-          <div class="legend"><span><span class="sw" style="background:var(--benign)"></span>${t.bandsB}</span><span><span class="sw" style="background:var(--malig)"></span>${t.bandsM}</span><span>${t.thisOne}</span></div>`;
+          <div class="legend"><span><span class="sw" style="background:var(--benign)"></span>${t.bandsB}</span><span><span class="sw" style="background:var(--malig)"></span>${t.bandsM}</span><span>${t.thisOne}</span><span><span class="logtag">log</span> ${t.logScale}</span><span>◂ ▸ ${t.offScale}</span></div>`;
       case 5: return `<div class="tiles two">${r.images.cam ? tile(r.images.cam, "Grad-CAM") : ""}<figure class="tile"><div class="emb" id="emb">${r.embedding.map(() => "<span></span>").join("")}</div><figcaption>${lang_uz ? "tasvir embeddingi h_img: 128 son" : "image embedding h_img: 128 numbers"}</figcaption></figure></div>`;
       case 6: {
         const avg = (k) => r.per_seed.reduce((a, s) => a + s.weights[k], 0) / r.per_seed.length;
